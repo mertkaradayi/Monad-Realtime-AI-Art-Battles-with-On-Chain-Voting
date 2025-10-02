@@ -8,8 +8,8 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Label } from '@/components/ui/label'
 
 interface MessageFormProps {
-  onSubmit: (content: string, author: string) => void
-  onUpdate?: (id: string, content: string, author: string) => void
+  onSubmit: (content: string) => void
+  onUpdate?: (id: string, content: string) => void
   editingMessage?: Message | null
   onCancel?: () => void
   isLoading?: boolean
@@ -23,7 +23,6 @@ export function MessageForm({
   isLoading = false 
 }: MessageFormProps) {
   const [content, setContent] = useState(editingMessage?.content || '')
-  const [author, setAuthor] = useState(editingMessage?.author || '')
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
@@ -31,20 +30,18 @@ export function MessageForm({
     if (!content.trim()) return
     
     if (editingMessage && onUpdate) {
-      onUpdate(editingMessage.id, content.trim(), author.trim() || 'Anonymous')
+      onUpdate(editingMessage.id, content.trim())
     } else {
-      onSubmit(content.trim(), author.trim() || 'Anonymous')
+      onSubmit(content.trim())
     }
     
     if (!editingMessage) {
       setContent('')
-      setAuthor('')
     }
   }
 
   const handleCancel = () => {
     setContent('')
-    setAuthor('')
     onCancel?.()
   }
 
@@ -57,20 +54,6 @@ export function MessageForm({
       </CardHeader>
       <CardContent>
         <form onSubmit={handleSubmit} className="space-y-4">
-          <div className="space-y-2">
-            <Label htmlFor="author">
-              Author (optional)
-            </Label>
-            <Input
-              id="author"
-              type="text"
-              value={author}
-              onChange={(e) => setAuthor(e.target.value)}
-              placeholder="Your name"
-              disabled={isLoading}
-            />
-          </div>
-          
           <div className="space-y-2">
             <Label htmlFor="content">
               Message *

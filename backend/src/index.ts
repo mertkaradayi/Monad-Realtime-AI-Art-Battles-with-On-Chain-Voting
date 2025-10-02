@@ -2,6 +2,7 @@ import express, { Request, Response, NextFunction } from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
 import { supabase } from './config/supabase.js';
+import { authenticateToken, requireWallet } from './middleware/auth.js';
 
 // Load environment variables
 dotenv.config();
@@ -54,7 +55,7 @@ app.get('/test-supabase', async (req: Request, res: Response) => {
 
 // Messages API routes
 // Get all messages
-app.get('/api/messages', async (req: Request, res: Response) => {
+app.get('/api/messages', authenticateToken, async (req: Request, res: Response) => {
   try {
     const { data, error } = await supabase
       .from('messages')
@@ -81,7 +82,7 @@ app.get('/api/messages', async (req: Request, res: Response) => {
 });
 
 // Create a new message
-app.post('/api/messages', async (req: Request, res: Response) => {
+app.post('/api/messages', authenticateToken, requireWallet, async (req: Request, res: Response) => {
   try {
     const { content, author } = req.body;
     
@@ -97,7 +98,7 @@ app.post('/api/messages', async (req: Request, res: Response) => {
       .insert([
         { 
           content: content.trim(),
-          author: author?.trim() || 'Anonymous'
+          author: req.user?.wallet?.address || 'Anonymous'
         }
       ])
       .select()
@@ -123,7 +124,7 @@ app.post('/api/messages', async (req: Request, res: Response) => {
 });
 
 // Update a message
-app.put('/api/messages/:id', async (req: Request, res: Response) => {
+app.put('/api/messages/:id', authenticateToken, requireWallet, async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
     const { content, author } = req.body;
@@ -139,7 +140,7 @@ app.put('/api/messages/:id', async (req: Request, res: Response) => {
       .from('messages')
       .update({ 
         content: content.trim(),
-        author: author?.trim() || 'Anonymous'
+        author: req.user?.wallet?.address || 'Anonymous'
       })
       .eq('id', id)
       .select()
@@ -172,7 +173,7 @@ app.put('/api/messages/:id', async (req: Request, res: Response) => {
 });
 
 // Delete a message
-app.delete('/api/messages/:id', async (req: Request, res: Response) => {
+app.delete('/api/messages/:id', authenticateToken, requireWallet, async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
     
@@ -217,12 +218,16 @@ app.get('/api', (req: Request, res: Response) => {
     endpoints: [
       'GET /health - Health check',
       'GET /test-supabase - Test Supabase connection',
-      'GET /api/messages - Get all messages',
-      'POST /api/messages - Create a new message',
-      'PUT /api/messages/:id - Update a message',
-      'DELETE /api/messages/:id - Delete a message',
+      'GET /api/messages - Get all messages (🔒 Auth required)',
+      'POST /api/messages - Create a new message (🔒 Auth + Wallet required)',
+      'PUT /api/messages/:id - Update a message (🔒 Auth + Wallet required)',
+      'DELETE /api/messages/:id - Delete a message (🔒 Auth + Wallet required)',
       'GET /api - This endpoint'
-    ]
+    ],
+    authentication: {
+      required: 'Bearer token from Privy authentication',
+      wallet_required: 'Connected wallet required for write operations'
+    }
   });
 });
 

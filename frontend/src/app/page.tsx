@@ -12,8 +12,7 @@ import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Toaster } from '@/components/ui/sonner'
 import { toast } from 'sonner'
-
-const API_BASE_URL = 'http://localhost:3001'
+import { api } from '@/lib/api'
 
 export default function Home() {
   const { ready, authenticated, user } = usePrivy()
@@ -27,8 +26,7 @@ export default function Home() {
     try {
       setIsLoading(true)
       setError(null)
-      const response = await fetch(`${API_BASE_URL}/api/messages`)
-      const result = await response.json()
+      const result = await api.getMessages()
       
       if (result.success) {
         setMessages(result.data)
@@ -37,27 +35,25 @@ export default function Home() {
         toast.error('Failed to fetch messages')
       }
     } catch (err) {
-      setError('Failed to connect to the backend server')
-      console.error('Error fetching messages:', err)
+      const error = err as Error;
+      if (error.message.includes('Authentication required')) {
+        setError('Please connect your wallet to view messages')
+        toast.error('Authentication required')
+      } else {
+        setError('Failed to connect to the backend server')
+        console.error('Error fetching messages:', err)
+      }
     } finally {
       setIsLoading(false)
     }
   }
 
   // Create a new message
-  const handleCreateMessage = async (content: string, author: string) => {
+  const handleCreateMessage = async (content: string) => {
     try {
       setIsLoading(true)
       setError(null)
-      const response = await fetch(`${API_BASE_URL}/api/messages`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ content, author }),
-      })
-      
-      const result = await response.json()
+      const result = await api.createMessage(content)
       
       if (result.success) {
         setMessages([result.data, ...messages])
@@ -67,27 +63,25 @@ export default function Home() {
         toast.error('Failed to create message')
       }
     } catch (err) {
-      setError('Failed to connect to the backend server')
-      console.error('Error creating message:', err)
+      const error = err as Error;
+      if (error.message.includes('Authentication required')) {
+        setError('Please connect your wallet to create messages')
+        toast.error('Authentication required')
+      } else {
+        setError('Failed to connect to the backend server')
+        console.error('Error creating message:', err)
+      }
     } finally {
       setIsLoading(false)
     }
   }
 
   // Update a message
-  const handleUpdateMessage = async (id: string, content: string, author: string) => {
+  const handleUpdateMessage = async (id: string, content: string) => {
     try {
       setIsLoading(true)
       setError(null)
-      const response = await fetch(`${API_BASE_URL}/api/messages/${id}`, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ content, author }),
-      })
-      
-      const result = await response.json()
+      const result = await api.updateMessage(id, content)
       
       if (result.success) {
         setMessages(messages.map(msg => msg.id === id ? result.data : msg))
@@ -98,8 +92,14 @@ export default function Home() {
         toast.error('Failed to update message')
       }
     } catch (err) {
-      setError('Failed to connect to the backend server')
-      console.error('Error updating message:', err)
+      const error = err as Error;
+      if (error.message.includes('Authentication required')) {
+        setError('Please connect your wallet to update messages')
+        toast.error('Authentication required')
+      } else {
+        setError('Failed to connect to the backend server')
+        console.error('Error updating message:', err)
+      }
     } finally {
       setIsLoading(false)
     }
@@ -114,11 +114,7 @@ export default function Home() {
     try {
       setIsLoading(true)
       setError(null)
-      const response = await fetch(`${API_BASE_URL}/api/messages/${id}`, {
-        method: 'DELETE',
-      })
-      
-      const result = await response.json()
+      const result = await api.deleteMessage(id)
       
       if (result.success) {
         setMessages(messages.filter(msg => msg.id !== id))
@@ -128,8 +124,14 @@ export default function Home() {
         toast.error('Failed to delete message')
       }
     } catch (err) {
-      setError('Failed to connect to the backend server')
-      console.error('Error deleting message:', err)
+      const error = err as Error;
+      if (error.message.includes('Authentication required')) {
+        setError('Please connect your wallet to delete messages')
+        toast.error('Authentication required')
+      } else {
+        setError('Failed to connect to the backend server')
+        console.error('Error deleting message:', err)
+      }
     } finally {
       setIsLoading(false)
     }
