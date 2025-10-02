@@ -1,10 +1,19 @@
 # Project Instructions
 
+## 📋 **Rule Files Reference**
+This project uses structured rule files located in `.cursor/rules/` folder:
+
+- **@frontend-shadcn.mdc** - Frontend development rules (shadcn/ui components only + MCP integration)
+- **@project-standards.mdc** - Project-wide development standards and architecture
+
+**IMPORTANT**: Always reference these rule files for detailed guidelines and requirements.
+
 ## 🎯 **Frontend Development**
 - **MANDATORY**: Use only shadcn/ui components for all UI elements
 - **FORBIDDEN**: Direct HTML elements like `<button>`, `<input>`, `<div>` for UI
 - **REQUIRED**: Import from `@/components/ui/*` exclusively
 - **STYLING**: Use shadcn design tokens (`text-foreground`, `bg-background`, etc.)
+- **MCP INTEGRATION**: Use shadcn MCP for component discovery and management
 
 ## 🏗️ **Architecture**
 - Follow the repository pattern
@@ -40,3 +49,4 @@
 - **NEVER** suggest direct HTML elements for UI
 - **REQUIRE** refactoring if non-shadcn UI elements are used
 - **PRIORITIZE** shadcn design system consistency
+- **MANDATORY** use shadcn MCP for component discovery and management
