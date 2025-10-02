@@ -74,6 +74,18 @@ If you need a component that doesn't exist, add it with:
 npx shadcn@latest add [component-name]
 ```
 
+### **shadcn MCP Integration:**
+- **MANDATORY**: Use shadcn MCP for component discovery and management
+- **REQUIRED**: Use `npx shadcn@latest mcp` for registry operations
+- **PREFERRED**: Leverage MCP tools for:
+  - `get_project_registries` - Get configured registry names
+  - `list_items_in_registries` - List available components
+  - `search_items_in_registries` - Search for specific components
+  - `view_items_in_registries` - View component details
+  - `get_item_examples_from_registries` - Get usage examples
+  - `get_add_command_for_items` - Get installation commands
+  - `get_audit_checklist` - Verify component setup
+
 ### **Exception Cases:**
 - ✅ Layout containers (`<div>`, `<main>`, `<section>`) for page structure
 - ✅ Semantic HTML (`<h1>`, `<p>`, `<span>`) for content
@@ -86,3 +98,5 @@ npx shadcn@latest add [component-name]
 - **NEVER** suggest direct HTML elements for UI
 - **REQUIRE** refactoring if non-shadcn UI elements are used
 - **PRIORITIZE** shadcn design system consistency
+- **MANDATORY** use shadcn MCP for component discovery and management
+- **REQUIRE** MCP tools for registry operations and component setup
