@@ -1,9 +1,12 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import { usePrivy } from '@privy-io/react-auth'
 import { Message } from '@/lib/supabase'
 import { MessagesList } from '@/components/MessagesList'
 import { MessageForm } from '@/components/MessageForm'
+import { AuthButton } from '@/components/AuthButton'
+import { LoginPage } from '@/components/LoginPage'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
@@ -13,6 +16,7 @@ import { toast } from 'sonner'
 const API_BASE_URL = 'http://localhost:3001'
 
 export default function Home() {
+  const { ready, authenticated, user } = usePrivy()
   const [messages, setMessages] = useState<Message[]>([])
   const [editingMessage, setEditingMessage] = useState<Message | null>(null)
   const [isLoading, setIsLoading] = useState(false)
@@ -133,19 +137,43 @@ export default function Home() {
 
   // Load messages on component mount
   useEffect(() => {
-    fetchMessages()
-  }, [])
+    if (authenticated) {
+      fetchMessages()
+    }
+  }, [authenticated])
+
+  // Show loading state while Privy initializes
+  if (!ready) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
+          <p className="text-muted-foreground">Loading...</p>
+        </div>
+      </div>
+    )
+  }
+
+  // Show login page if not authenticated
+  if (!authenticated) {
+    return <LoginPage />
+  }
 
   return (
     <div className="min-h-screen bg-background py-8">
       <div className="max-w-4xl mx-auto px-4">
-        <div className="text-center mb-8">
-          <h1 className="text-4xl font-bold text-foreground mb-2">
-            Supabase Messages Demo
-          </h1>
-          <p className="text-muted-foreground">
-            A simple example of storing and retrieving data with Supabase
-          </p>
+        <div className="flex justify-between items-center mb-8">
+          <div className="text-center flex-1">
+            <h1 className="text-4xl font-bold text-foreground mb-2">
+              Battle Semantic
+            </h1>
+            <p className="text-muted-foreground">
+              A simple example of storing and retrieving data with Supabase
+            </p>
+          </div>
+          <div className="ml-4">
+            <AuthButton />
+          </div>
         </div>
 
         {error && (
