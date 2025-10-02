@@ -52,6 +52,163 @@ app.get('/test-supabase', async (req: Request, res: Response) => {
   }
 });
 
+// Messages API routes
+// Get all messages
+app.get('/api/messages', async (req: Request, res: Response) => {
+  try {
+    const { data, error } = await supabase
+      .from('messages')
+      .select('*')
+      .order('created_at', { ascending: false });
+    
+    if (error) {
+      throw error;
+    }
+    
+    res.json({ 
+      success: true,
+      data: data || []
+    });
+  } catch (err) {
+    const error = err as Error;
+    console.error('Error fetching messages:', error);
+    res.status(500).json({ 
+      success: false,
+      error: 'Failed to fetch messages',
+      message: error.message 
+    });
+  }
+});
+
+// Create a new message
+app.post('/api/messages', async (req: Request, res: Response) => {
+  try {
+    const { content, author } = req.body;
+    
+    if (!content) {
+      return res.status(400).json({
+        success: false,
+        error: 'Content is required'
+      });
+    }
+    
+    const { data, error } = await supabase
+      .from('messages')
+      .insert([
+        { 
+          content: content.trim(),
+          author: author?.trim() || 'Anonymous'
+        }
+      ])
+      .select()
+      .single();
+    
+    if (error) {
+      throw error;
+    }
+    
+    res.status(201).json({ 
+      success: true,
+      data 
+    });
+  } catch (err) {
+    const error = err as Error;
+    console.error('Error creating message:', error);
+    res.status(500).json({ 
+      success: false,
+      error: 'Failed to create message',
+      message: error.message 
+    });
+  }
+});
+
+// Update a message
+app.put('/api/messages/:id', async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+    const { content, author } = req.body;
+    
+    if (!content) {
+      return res.status(400).json({
+        success: false,
+        error: 'Content is required'
+      });
+    }
+    
+    const { data, error } = await supabase
+      .from('messages')
+      .update({ 
+        content: content.trim(),
+        author: author?.trim() || 'Anonymous'
+      })
+      .eq('id', id)
+      .select()
+      .single();
+    
+    if (error) {
+      throw error;
+    }
+    
+    if (!data) {
+      return res.status(404).json({
+        success: false,
+        error: 'Message not found'
+      });
+    }
+    
+    res.json({ 
+      success: true,
+      data 
+    });
+  } catch (err) {
+    const error = err as Error;
+    console.error('Error updating message:', error);
+    res.status(500).json({ 
+      success: false,
+      error: 'Failed to update message',
+      message: error.message 
+    });
+  }
+});
+
+// Delete a message
+app.delete('/api/messages/:id', async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+    
+    const { data, error } = await supabase
+      .from('messages')
+      .delete()
+      .eq('id', id)
+      .select()
+      .single();
+    
+    if (error) {
+      throw error;
+    }
+    
+    if (!data) {
+      return res.status(404).json({
+        success: false,
+        error: 'Message not found'
+      });
+    }
+    
+    res.json({ 
+      success: true,
+      message: 'Message deleted successfully'
+    });
+  } catch (err) {
+    const error = err as Error;
+    console.error('Error deleting message:', error);
+    res.status(500).json({ 
+      success: false,
+      error: 'Failed to delete message',
+      message: error.message 
+    });
+  }
+});
+
 // Basic API routes
 app.get('/api', (req: Request, res: Response) => {
   res.json({ 
@@ -60,6 +217,10 @@ app.get('/api', (req: Request, res: Response) => {
     endpoints: [
       'GET /health - Health check',
       'GET /test-supabase - Test Supabase connection',
+      'GET /api/messages - Get all messages',
+      'POST /api/messages - Create a new message',
+      'PUT /api/messages/:id - Update a message',
+      'DELETE /api/messages/:id - Delete a message',
       'GET /api - This endpoint'
     ]
   });
