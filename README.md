@@ -1,54 +1,48 @@
 # Battle Semantic
 
-AI-powered semantic battle application built with Next.js, TypeScript, and shadcn/ui.
+AI-powered semantic battle application built with Next.js, TypeScript, and Supabase.
 
-## Project Structure
+## Quick Start
 
+```bash
+# Install dependencies
+npm run install:all
+
+# Setup backend
+cd backend && cp env.example .env
+# Edit .env with your Supabase credentials
+
+# Start development
+npm run dev:backend  # Terminal 1
+npm run dev:frontend # Terminal 2
 ```
-battle-semantic/
-├── frontend/                 # Next.js frontend application
-│   ├── src/                 # Source code
-│   │   ├── app/            # Next.js App Router
-│   │   ├── components/     # React components
-│   │   └── lib/           # Utility functions
-│   ├── public/            # Static assets
-│   └── package.json       # Frontend dependencies
-├── .gitignore             # Git ignore rules
-└── package.json          # Root package.json (monorepo)
-```
+
+**Access:**
+- Frontend: http://localhost:3000
+- Backend: http://localhost:3001
 
 ## Tech Stack
 
-- **Frontend**: Next.js 14 + TypeScript + Tailwind CSS + shadcn/ui
-- **AI Integration**: Optimized for AI coding assistants (Cursor, Copilot, etc.)
-- **MCPs**: TypeScript, Tailwind, Next.js, and shadcn/ui MCPs configured
+- **Frontend**: Next.js 15 + React 19 + Tailwind CSS + shadcn/ui
+- **Backend**: Express.js + TypeScript + Supabase
+- **Development**: Monorepo with npm workspaces
 
-## Getting Started
+## Scripts
 
-1. **Install dependencies**:
-   ```bash
-   npm run install:all
-   ```
+```bash
+npm run dev:frontend  # Start frontend
+npm run dev:backend   # Start backend
+npm run dev:watch     # Frontend with auto-restart
+npm run build         # Build both
+npm run install:all   # Install all dependencies
+```
 
-2. **Start development server**:
-   ```bash
-   npm run dev
-   ```
+## Environment Variables
 
-3. **Open your browser** and visit `http://localhost:3000`
-
-## Available Scripts
-
-- `npm run dev` - Start development server
-- `npm run dev:watch` - Start development server with nodemon (auto-restart on changes)
-- `npm run build` - Build for production
-- `npm run start` - Start production server
-- `npm run lint` - Run ESLint
-- `npm run install:all` - Install all dependencies
-
-## AI Development
-
-This project is optimized for AI-assisted development with:
-- MCPs configured for enhanced code suggestions
-- Popular tech stack with maximum AI training data
-- Predictable patterns for consistent code generation
+**Backend (.env):**
+```env
+SUPABASE_URL=your_supabase_project_url
+SUPABASE_ANON_KEY=your_supabase_anon_key
+SUPABASE_SERVICE_ROLE_KEY=your_supabase_service_role_key
+PORT=3001
+```
