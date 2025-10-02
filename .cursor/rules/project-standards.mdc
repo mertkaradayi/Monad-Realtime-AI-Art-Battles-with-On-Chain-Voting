@@ -1,0 +1,42 @@
+---
+description: Project-wide development standards and architecture
+globs: ["**/*"]
+alwaysApply: false
+---
+
+# Project Development Standards
+
+## 📁 **PROJECT STRUCTURE:**
+- Frontend: Next.js + TypeScript + shadcn/ui + Tailwind CSS
+- Backend: Express + TypeScript + Supabase
+- Database: PostgreSQL (via Supabase)
+
+## 🎨 **DESIGN SYSTEM:**
+- Use shadcn/ui "new-york" style
+- Neutral base color scheme
+- CSS variables enabled
+- Lucide icons
+- Tailwind CSS for styling
+
+## 🔧 **DEVELOPMENT WORKFLOW:**
+1. Check if shadcn component exists for UI need
+2. Add component if missing: `npx shadcn@latest add [name]`
+3. Import and use shadcn component
+4. Apply shadcn design tokens for styling
+5. Test component functionality
+6. Ensure accessibility compliance
+
+## 📝 **CODE STANDARDS:**
+- Use TypeScript for all new files
+- Prefer functional components in React
+- Use camelCase for variables and functions
+- Use PascalCase for components
+- Use kebab-case for file names
+- Use snake_case for database columns
+
+## 🏗️ **ARCHITECTURE:**
+- Follow the repository pattern
+- Keep business logic in service layers
+- Use proper error handling
+- Implement proper validation
+- Follow RESTful API conventions

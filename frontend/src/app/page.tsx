@@ -4,6 +4,11 @@ import { useState, useEffect } from 'react'
 import { Message } from '@/lib/supabase'
 import { MessagesList } from '@/components/MessagesList'
 import { MessageForm } from '@/components/MessageForm'
+import { Alert, AlertDescription } from '@/components/ui/alert'
+import { Badge } from '@/components/ui/badge'
+import { Button } from '@/components/ui/button'
+import { Toaster } from '@/components/ui/sonner'
+import { toast } from 'sonner'
 
 const API_BASE_URL = 'http://localhost:3001'
 
@@ -25,6 +30,7 @@ export default function Home() {
         setMessages(result.data)
       } else {
         setError(result.error || 'Failed to fetch messages')
+        toast.error('Failed to fetch messages')
       }
     } catch (err) {
       setError('Failed to connect to the backend server')
@@ -51,8 +57,10 @@ export default function Home() {
       
       if (result.success) {
         setMessages([result.data, ...messages])
+        toast.success('Message created successfully!')
       } else {
         setError(result.error || 'Failed to create message')
+        toast.error('Failed to create message')
       }
     } catch (err) {
       setError('Failed to connect to the backend server')
@@ -80,8 +88,10 @@ export default function Home() {
       if (result.success) {
         setMessages(messages.map(msg => msg.id === id ? result.data : msg))
         setEditingMessage(null)
+        toast.success('Message updated successfully!')
       } else {
         setError(result.error || 'Failed to update message')
+        toast.error('Failed to update message')
       }
     } catch (err) {
       setError('Failed to connect to the backend server')
@@ -108,8 +118,10 @@ export default function Home() {
       
       if (result.success) {
         setMessages(messages.filter(msg => msg.id !== id))
+        toast.success('Message deleted successfully!')
       } else {
         setError(result.error || 'Failed to delete message')
+        toast.error('Failed to delete message')
       }
     } catch (err) {
       setError('Failed to connect to the backend server')
@@ -125,28 +137,32 @@ export default function Home() {
   }, [])
 
   return (
-    <div className="min-h-screen bg-gray-50 py-8">
+    <div className="min-h-screen bg-background py-8">
       <div className="max-w-4xl mx-auto px-4">
         <div className="text-center mb-8">
-          <h1 className="text-4xl font-bold text-gray-900 mb-2">
+          <h1 className="text-4xl font-bold text-foreground mb-2">
             Supabase Messages Demo
           </h1>
-          <p className="text-gray-600">
+          <p className="text-muted-foreground">
             A simple example of storing and retrieving data with Supabase
           </p>
         </div>
 
         {error && (
-          <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded mb-6">
-            <p className="font-medium">Error:</p>
-            <p>{error}</p>
-            <button 
-              onClick={fetchMessages}
-              className="mt-2 text-sm underline hover:no-underline"
-            >
-              Try again
-            </button>
-          </div>
+          <Alert variant="destructive" className="mb-6">
+            <AlertDescription>
+              <div className="space-y-2">
+                <p>{error}</p>
+                <Button 
+                  variant="link"
+                  size="sm"
+                  onClick={fetchMessages}
+                >
+                  Try again
+                </Button>
+              </div>
+            </AlertDescription>
+          </Alert>
         )}
 
         <div className="space-y-6">
@@ -160,14 +176,18 @@ export default function Home() {
 
           <div>
             <div className="flex justify-between items-center mb-4">
-              <h2 className="text-2xl font-semibold text-gray-900">Messages</h2>
-              <button
+              <div className="flex items-center gap-2">
+                <h2 className="text-2xl font-semibold text-foreground">Messages</h2>
+                <Badge variant="outline">{messages.length}</Badge>
+              </div>
+              <Button
+                variant="link"
+                size="sm"
                 onClick={fetchMessages}
                 disabled={isLoading}
-                className="text-sm text-blue-600 hover:text-blue-800 underline disabled:opacity-50"
               >
                 {isLoading ? 'Loading...' : 'Refresh'}
-              </button>
+              </Button>
             </div>
             
             <MessagesList
@@ -178,17 +198,23 @@ export default function Home() {
           </div>
         </div>
 
-        <div className="mt-12 p-6 bg-blue-50 rounded-lg">
-          <h3 className="text-lg font-semibold text-blue-900 mb-2">
-            How this works:
-          </h3>
-          <ul className="text-blue-800 space-y-1 text-sm">
-            <li>• Frontend sends HTTP requests to the backend API</li>
-            <li>• Backend uses Supabase client to interact with the database</li>
-            <li>• Data is stored in a PostgreSQL table called "messages"</li>
-            <li>• Real-time updates could be added with Supabase subscriptions</li>
-          </ul>
-        </div>
+        <Alert className="mt-12">
+          <AlertDescription>
+            <div className="space-y-2">
+              <h3 className="text-lg font-semibold mb-2">
+                How this works:
+              </h3>
+              <ul className="space-y-1 text-sm">
+                <li>• Frontend sends HTTP requests to the backend API</li>
+                <li>• Backend uses Supabase client to interact with the database</li>
+                <li>• Data is stored in a PostgreSQL table called "messages"</li>
+                <li>• Real-time updates could be added with Supabase subscriptions</li>
+              </ul>
+            </div>
+          </AlertDescription>
+        </Alert>
+        
+        <Toaster />
       </div>
     </div>
   )

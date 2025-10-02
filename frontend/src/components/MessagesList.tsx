@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react'
 import { Message } from '@/lib/supabase'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
+import { Badge } from '@/components/ui/badge'
 
 interface MessagesListProps {
   messages: Message[]
@@ -16,7 +17,7 @@ export function MessagesList({ messages, onDelete, onEdit }: MessagesListProps) 
     return (
       <Card>
         <CardContent className="p-6">
-          <p className="text-center text-gray-500">No messages yet. Add one below!</p>
+          <p className="text-center text-muted-foreground">No messages yet. Add one below!</p>
         </CardContent>
       </Card>
     )
@@ -29,9 +30,14 @@ export function MessagesList({ messages, onDelete, onEdit }: MessagesListProps) 
           <CardHeader>
             <div className="flex justify-between items-start">
               <div>
-                <CardTitle className="text-lg">{message.author}</CardTitle>
-                <p className="text-sm text-gray-500">
-                  {new Date(message.created_at).toLocaleString()}
+                <div className="flex items-center gap-2 mb-1">
+                  <CardTitle className="text-lg">{message.author}</CardTitle>
+                  <Badge variant="secondary" className="text-xs">
+                    {new Date(message.created_at).toLocaleDateString()}
+                  </Badge>
+                </div>
+                <p className="text-sm text-muted-foreground">
+                  {new Date(message.created_at).toLocaleTimeString()}
                 </p>
               </div>
               <div className="flex gap-2">
@@ -53,7 +59,7 @@ export function MessagesList({ messages, onDelete, onEdit }: MessagesListProps) 
             </div>
           </CardHeader>
           <CardContent>
-            <p className="text-gray-700">{message.content}</p>
+            <p className="text-foreground leading-relaxed">{message.content}</p>
           </CardContent>
         </Card>
       ))}

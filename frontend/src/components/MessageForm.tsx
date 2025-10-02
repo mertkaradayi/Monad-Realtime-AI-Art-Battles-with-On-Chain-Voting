@@ -5,6 +5,7 @@ import { Message } from '@/lib/supabase'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Label } from '@/components/ui/label'
 
 interface MessageFormProps {
   onSubmit: (content: string, author: string) => void
@@ -56,10 +57,10 @@ export function MessageForm({
       </CardHeader>
       <CardContent>
         <form onSubmit={handleSubmit} className="space-y-4">
-          <div>
-            <label htmlFor="author" className="block text-sm font-medium text-gray-700 mb-1">
+          <div className="space-y-2">
+            <Label htmlFor="author">
               Author (optional)
-            </label>
+            </Label>
             <Input
               id="author"
               type="text"
@@ -70,10 +71,10 @@ export function MessageForm({
             />
           </div>
           
-          <div>
-            <label htmlFor="content" className="block text-sm font-medium text-gray-700 mb-1">
+          <div className="space-y-2">
+            <Label htmlFor="content">
               Message *
-            </label>
+            </Label>
             <Input
               id="content"
               type="text"

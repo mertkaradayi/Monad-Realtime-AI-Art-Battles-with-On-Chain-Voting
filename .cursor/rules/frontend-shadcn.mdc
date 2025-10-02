@@ -1,0 +1,88 @@
+---
+description: Frontend development rules - shadcn/ui components only
+globs: ["frontend/**/*", "src/**/*"]
+alwaysApply: true
+---
+
+# Frontend Development Rules - shadcn/ui Only
+
+## 🎯 **MANDATORY: shadcn/ui Components Only**
+
+### **CRITICAL RULE:**
+- **ALL frontend components MUST use shadcn/ui components exclusively**
+- **NO custom HTML elements** (div, button, input, etc.) for UI components
+- **NO other UI libraries** (Material-UI, Ant Design, etc.)
+- **NO custom styled components** without shadcn base
+
+### **Required Component Usage:**
+
+```typescript
+// ✅ CORRECT - Use shadcn components
+import { Button } from '@/components/ui/button'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
+import { Alert, AlertDescription } from '@/components/ui/alert'
+import { Badge } from '@/components/ui/badge'
+
+// ❌ FORBIDDEN - Direct HTML elements
+<button onClick={handleClick}>Click me</button>
+<input type="text" value={value} onChange={onChange} />
+<div className="custom-styles">Content</div>
+```
+
+### **Available shadcn Components:**
+- Button, Card, Input, Label, Alert, Badge
+- Dialog, Select, Textarea, Checkbox, RadioGroup
+- Switch, Slider, Progress, Skeleton, Avatar
+- Separator, ScrollArea, Tabs, Accordion, Collapsible
+- Popover, Tooltip, DropdownMenu, Command, Calendar
+- Table, Sheet, Drawer, Sonner (Toast)
+
+### **Styling Rules:**
+- Use shadcn variants: `variant="outline"`, `size="sm"`
+- Use shadcn spacing: `space-y-4`, `gap-2`, `p-4`
+- Use shadcn colors: `text-foreground`, `text-muted-foreground`
+- NO custom CSS classes for UI styling
+- NO inline styles for UI components
+
+### **Component Structure Pattern:**
+```typescript
+export function MyComponent() {
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle>Title</CardTitle>
+      </CardHeader>
+      <CardContent>
+        <div className="space-y-4">
+          <div className="space-y-2">
+            <Label htmlFor="input">Label</Label>
+            <Input id="input" placeholder="Enter text" />
+          </div>
+          <Button type="submit">Submit</Button>
+        </div>
+      </CardContent>
+    </Card>
+  )
+}
+```
+
+### **Adding New Components:**
+If you need a component that doesn't exist, add it with:
+```bash
+npx shadcn@latest add [component-name]
+```
+
+### **Exception Cases:**
+- ✅ Layout containers (`<div>`, `<main>`, `<section>`) for page structure
+- ✅ Semantic HTML (`<h1>`, `<p>`, `<span>`) for content
+- ❌ UI components that have shadcn equivalents
+
+---
+
+## 🚨 **ENFORCEMENT:**
+- **ALWAYS** suggest shadcn components for any UI element
+- **NEVER** suggest direct HTML elements for UI
+- **REQUIRE** refactoring if non-shadcn UI elements are used
+- **PRIORITIZE** shadcn design system consistency
