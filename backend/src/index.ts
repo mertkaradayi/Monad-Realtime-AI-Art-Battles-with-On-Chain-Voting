@@ -1,22 +1,19 @@
 import express, { Request, Response, NextFunction } from 'express';
 import cors from 'cors';
-import { config } from './config/config.js';
+import { config, supabase } from './config/config.js';
 import { envValidation } from './config/env.js';
-import { supabase } from './config/supabase.js';
-import { authenticateToken, requireWallet } from './middleware/auth.js';
 import { 
-  getSecurityConfig, 
-  securityValidator 
-} from './middleware/security.js';
-import { 
+  auth, 
+  requireWallet, 
+  security, 
+  compressionMiddleware, 
+  rateLimiter, 
+  llmRateLimiter, 
   errorHandler, 
-  notFoundHandler, 
-  unhandledRejectionHandler,
-  uncaughtExceptionHandler,
-  gracefulShutdown 
-} from './middleware/errorHandler.js';
-import llmRoutes from './routes/llmRoutes.js';
-import messageRoutes from './routes/messageRoutes.js';
+  notFoundHandler 
+} from './middleware/middleware.js';
+import llmRoutes from './routes/llm.js';
+import messageRoutes from './routes/messages.js';
 
 // Validate configuration on startup
 if (!envValidation.isValid) {
@@ -27,15 +24,9 @@ if (!envValidation.isValid) {
 const app = express();
 const PORT = config.server.port;
 
-// Get security configuration
-const security = getSecurityConfig();
-
 // Security middleware (order matters!)
-app.use(security.headers);
-app.use(security.helmet);
-app.use(security.compression);
-app.use(security.logging);
-app.use(securityValidator);
+app.use(security);
+app.use(compressionMiddleware);
 
 // CORS and body parsing
 app.use(cors(config.server.cors));
@@ -43,13 +34,13 @@ app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
 // Rate limiting
-app.use(security.rateLimits.general);
+app.use(rateLimiter);
 
 // LLM API routes (with LLM-specific rate limiting)
-app.use('/api/llm', authenticateToken, security.rateLimits.llm, llmRoutes);
+app.use('/api/llm', auth, llmRateLimiter, llmRoutes);
 
 // Message API routes
-app.use('/api/messages', authenticateToken, messageRoutes);
+app.use('/api/messages', auth, messageRoutes);
 
 // Health check endpoint
 app.get('/health', (req: Request, res: Response) => {
@@ -133,16 +124,23 @@ const server = app.listen(PORT, () => {
   console.log(`📊 Health check: http://localhost:${PORT}/health`);
   console.log(`🔗 Supabase test: http://localhost:${PORT}/test-supabase`);
   console.log(`📋 API info: http://localhost:${PORT}/api`);
-  console.log(`🔒 Security: ${security.isProduction ? 'Production mode' : 'Development mode'}`);
+  console.log(`🔒 Security: ${config.server.nodeEnv === 'production' ? 'Production mode' : 'Development mode'}`);
 });
 
-// Handle unhandled promise rejections
-process.on('unhandledRejection', unhandledRejectionHandler);
-
-// Handle uncaught exceptions
-process.on('uncaughtException', uncaughtExceptionHandler);
-
 // Handle graceful shutdown
-process.on('SIGTERM', () => gracefulShutdown('SIGTERM', server));
-process.on('SIGINT', () => gracefulShutdown('SIGINT', server));
+process.on('SIGTERM', () => {
+  console.log('SIGTERM received. Shutting down gracefully...');
+  server.close(() => {
+    console.log('Server closed');
+    process.exit(0);
+  });
+});
+
+process.on('SIGINT', () => {
+  console.log('SIGINT received. Shutting down gracefully...');
+  server.close(() => {
+    console.log('Server closed');
+    process.exit(0);
+  });
+});
 

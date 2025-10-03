@@ -1,5 +1,6 @@
 import { Request, Response } from 'express';
-import { FalService, LLMRequest } from '../services/falService.js';
+import { FalService } from '../services/fal.js';
+import { LLMRequest } from '../types.js';
 
 export class LLMController {
   /**

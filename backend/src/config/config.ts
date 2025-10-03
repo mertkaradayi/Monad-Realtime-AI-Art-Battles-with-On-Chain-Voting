@@ -1,4 +1,5 @@
 import { env } from './env.js';
+import { createClient, SupabaseClient } from '@supabase/supabase-js';
 
 /**
  * Configuration Types
@@ -118,6 +119,23 @@ export const config: AppConfig = {
 };
 
 // Types are already exported above with the interfaces
+
+// Create Supabase clients
+export const supabase: SupabaseClient = createClient(
+  config.database.supabase.url, 
+  config.database.supabase.anonKey
+);
+
+export const supabaseAdmin: SupabaseClient = createClient(
+  config.database.supabase.url, 
+  config.database.supabase.serviceRoleKey,
+  {
+    auth: {
+      autoRefreshToken: false,
+      persistSession: false
+    }
+  }
+);
 
 // Default export
 export default config;

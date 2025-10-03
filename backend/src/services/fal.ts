@@ -1,27 +1,11 @@
 import { fal } from '@fal-ai/client';
 import { config } from '../config/config.js';
+import { LLMRequest, LLMResponse } from '../types.js';
 
 // Configure fal.ai client with centralized configuration
 fal.config({
   credentials: config.external.fal.apiKey,
 });
-
-export interface LLMRequest {
-  model: string;
-  prompt: string;
-  temperature?: number;
-  max_tokens?: number;
-}
-
-export interface LLMResponse {
-  data: {
-    output: string;
-    reasoning?: string | null;
-    partial: boolean;
-    error?: string | null;
-  };
-  requestId: string;
-}
 
 export class FalService {
   /**

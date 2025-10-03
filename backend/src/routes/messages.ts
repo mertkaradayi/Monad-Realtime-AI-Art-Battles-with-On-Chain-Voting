@@ -1,6 +1,6 @@
 import { Router } from 'express';
-import { MessageController } from '../controllers/messageController.js';
-import { requireWallet } from '../middleware/auth.js';
+import { MessageController } from '../controllers/messages.js';
+import { requireWallet } from '../middleware/middleware.js';
 
 const router = Router();
 

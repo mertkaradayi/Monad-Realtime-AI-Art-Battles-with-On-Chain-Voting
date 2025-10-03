@@ -41,11 +41,27 @@ Comprehensive documentation is available in the [`docs/`](./docs/) directory:
 ## Scripts
 
 ```bash
+# Development
 npm run dev:frontend  # Start frontend
 npm run dev:backend   # Start backend
 npm run dev:watch     # Frontend with auto-restart
-npm run build         # Build both
+
+# Building
+npm run build         # Build both frontend and backend
+npm run build:frontend # Build frontend only
+npm run build:backend  # Build backend only
+
+# Testing
+npm run test          # Run all backend tests
+npm run test:fal      # Test FAL.ai integration
+npm run test:message  # Test message enhancement
+npm run test:demo     # Test message demo
+npm run test:watch    # Run tests in watch mode
+
+# Utilities
 npm run install:all   # Install all dependencies
+npm run type-check    # TypeScript type checking
+npm run lint          # Lint frontend code
 ```
 
 ## 🎯 Key Features

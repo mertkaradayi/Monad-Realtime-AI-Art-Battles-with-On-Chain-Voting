@@ -1,6 +1,7 @@
 import { Request, Response } from 'express';
-import { supabase } from '../config/supabase.js';
-import { MessageEnhancementService, EnhancementRequest } from '../services/messageEnhancementService.js';
+import { supabase } from '../config/config.js';
+import { MessageEnhancementService } from '../services/enhancement.js';
+import { EnhancementRequest } from '../types.js';
 
 export class MessageController {
   /**

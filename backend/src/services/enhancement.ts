@@ -1,18 +1,5 @@
-import { FalService, LLMRequest } from './falService.js';
-
-export interface EnhancementRequest {
-  originalMessage: string;
-  enhancementType?: 'grammar' | 'clarity' | 'professional' | 'creative' | 'concise';
-  targetAudience?: 'general' | 'professional' | 'academic' | 'casual';
-}
-
-export interface EnhancementResponse {
-  originalMessage: string;
-  enhancedMessage: string;
-  enhancementType: string;
-  improvements: string[];
-  confidence: number;
-}
+import { FalService, LLMRequest } from './fal.js';
+import { EnhancementRequest, EnhancementResponse } from '../types.js';
 
 export class MessageEnhancementService {
   /**

@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { LLMController } from '../controllers/llmController.js';
+import { LLMController } from '../controllers/llm.js';
 
 const router = Router();
 

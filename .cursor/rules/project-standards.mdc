@@ -7,9 +7,42 @@ alwaysApply: false
 # Project Development Standards
 
 ## 📁 **PROJECT STRUCTURE:**
-- Frontend: Next.js + TypeScript + shadcn/ui + Tailwind CSS
-- Backend: Express + TypeScript + Supabase
-- Database: PostgreSQL (via Supabase)
+
+### **Frontend:**
+- Next.js + TypeScript + shadcn/ui + Tailwind CSS
+- Location: `frontend/src/`
+
+### **Backend:**
+- Express + TypeScript + Supabase
+- Location: `backend/src/`
+- Authentication: Privy (wallet + social login)
+- AI Services: FAL.ai (LLM integration)
+
+### **Database:**
+- PostgreSQL (via Supabase)
+- Location: `backend/src/database/` (MCP managed)
+
+### **Backend Structure Guidelines:**
+- **Controllers**: Business logic and request handling
+- **Routes**: API endpoint definitions and middleware application  
+- **Services**: External service integrations
+- **Middleware**: Authentication, security, error handling
+- **Config**: Environment variables and application configuration
+- **Types**: Essential TypeScript interfaces and types
+- **Database**: MCP managed (DO NOT TOUCH manually)
+
+### **Example Structure:**
+```
+backend/src/
+├── index.ts              # Main server entry point
+├── controllers/          # Business logic
+├── routes/              # API routes
+├── middleware/          # Auth, security, error handling
+├── config/              # Configuration files
+├── services/            # External service integrations
+├── types.ts             # TypeScript types
+└── database/            # MCP managed
+```
 
 ## 🎨 **DESIGN SYSTEM:**
 - Use shadcn/ui "new-york" style
@@ -27,6 +60,15 @@ alwaysApply: false
 6. Ensure accessibility compliance
 
 ## 📝 **CODE STANDARDS:**
+
+### **File Naming Convention:**
+- **Controllers**: Use descriptive names without "Controller" suffix (e.g., `messages.ts`, `users.ts`)
+- **Routes**: Use descriptive names without "Routes" suffix (e.g., `messages.ts`, `auth.ts`)
+- **Services**: Use descriptive names without "Service" suffix (e.g., `fal.ts`, `email.ts`)
+- **Middleware**: Use descriptive names, avoid generic `index.ts` (e.g., `middleware.ts`, `auth.ts`)
+- **Config**: Use descriptive names (e.g., `config.ts`, `env.ts`, `database.ts`)
+
+### **General Standards:**
 - Use TypeScript for all new files
 - Prefer functional components in React
 - Use camelCase for variables and functions
@@ -34,9 +76,39 @@ alwaysApply: false
 - Use kebab-case for file names
 - Use snake_case for database columns
 
+### **Folder Logic:**
+- Folder name already indicates purpose, so don't repeat it in filename
+- Keep naming consistent across all folders
+- Make files easy to find and understand
+
 ## 🏗️ **ARCHITECTURE:**
+
+### **Backend Architecture:**
+- **Controllers**: Business logic and request handling
+- **Routes**: API endpoint definitions and middleware application
+- **Services**: External service integrations (FAL.ai, email, etc.)
+- **Middleware**: Authentication, security, error handling
+- **Config**: Environment variables and application configuration
+- **Types**: Essential TypeScript interfaces and types
+
+### **Authentication & External Services:**
+- **Authentication**: Privy for wallet connection and social login
+- **AI Services**: FAL.ai for LLM integration and text generation
+- **Database**: Supabase for PostgreSQL database and real-time features
+- **Frontend Auth**: Use Privy React hooks (`usePrivy`, `useWallets`)
+- **Backend Auth**: Use Privy server SDK for token verification
+
+### **Database Management:**
+- **MCP Only**: Use Supabase MCP tools for all database operations
+- **No Manual SQL**: Never edit SQL files directly
+- **Schema Changes**: Apply via MCP migrations only
+- **Type Generation**: Auto-generate TypeScript types from schema
+
+### **General Principles:**
 - Follow the repository pattern
 - Keep business logic in service layers
 - Use proper error handling
 - Implement proper validation
 - Follow RESTful API conventions
+- Maintain clean, minimal structure
+- Avoid over-engineering
