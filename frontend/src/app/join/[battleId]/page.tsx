@@ -185,6 +185,26 @@ export default function JoinBattlePage() {
           })
         }
       } else {
+        // Fallback: verify current state – user might have joined despite error
+        try {
+          const state = await api.getBattle(battleId)
+          if (state.success) {
+            const updated = state.data
+            const isP1 = updated.participant1_wallet === user?.wallet?.address
+            const isP2 = updated.participant2_wallet === user?.wallet?.address
+            if (isP1 || isP2) {
+              setBattle(updated)
+              toast.success(isP1 ? '🎯 You are Participant 1!' : '🎯 You are Participant 2!', {
+                description: isP1 ? 'Waiting for Participant 2 to join...' : 'Battle is now active! Both participants have joined.',
+                duration: 4000
+              })
+              setError(null)
+              return
+            }
+          }
+        } catch (_) {
+          // ignore secondary fetch errors
+        }
         setError(result.error || 'Failed to join battle')
         toast.error('Failed to join battle')
       }
@@ -194,6 +214,26 @@ export default function JoinBattlePage() {
         setError('Please connect your wallet to join battles')
         toast.error('Authentication required')
       } else {
+        // Fallback: verify current state – user might have joined despite error
+        try {
+          const state = await api.getBattle(battleId)
+          if (state.success) {
+            const updated = state.data
+            const isP1 = updated.participant1_wallet === user?.wallet?.address
+            const isP2 = updated.participant2_wallet === user?.wallet?.address
+            if (isP1 || isP2) {
+              setBattle(updated)
+              toast.success(isP1 ? '🎯 You are Participant 1!' : '🎯 You are Participant 2!', {
+                description: isP1 ? 'Waiting for Participant 2 to join...' : 'Battle is now active! Both participants have joined.',
+                duration: 4000
+              })
+              setError(null)
+              return
+            }
+          }
+        } catch (_) {
+          // ignore secondary fetch errors
+        }
         setError('Failed to join battle')
         console.error('Error joining battle:', err)
         toast.error('Failed to join battle, please try again')
