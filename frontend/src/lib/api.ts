@@ -49,6 +49,62 @@ export const api = {
     return response.json();
   },
 
+  // Create an enhanced message (automatically enhances the content)
+  async createEnhancedMessage(content: string, enhancementType: string = 'clarity', targetAudience: string = 'general') {
+    const headers = await getAuthHeaders();
+    const response = await fetch(`${API_BASE_URL}/api/messages/enhanced`, {
+      method: 'POST',
+      headers,
+      body: JSON.stringify({ 
+        content,
+        enhancementType,
+        targetAudience,
+        autoEnhance: true
+      }),
+    });
+    
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+    
+    return response.json();
+  },
+
+  // Enhance a message without saving
+  async enhanceMessage(content: string, enhancementType: string = 'clarity', targetAudience: string = 'general') {
+    const headers = await getAuthHeaders();
+    const response = await fetch(`${API_BASE_URL}/api/messages/enhance`, {
+      method: 'POST',
+      headers,
+      body: JSON.stringify({ 
+        originalMessage: content,
+        enhancementType,
+        targetAudience
+      }),
+    });
+    
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+    
+    return response.json();
+  },
+
+  // Get enhancement options
+  async getEnhancementOptions() {
+    const headers = await getAuthHeaders();
+    const response = await fetch(`${API_BASE_URL}/api/messages/enhancement-options`, {
+      method: 'GET',
+      headers,
+    });
+    
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+    
+    return response.json();
+  },
+
   // Update a message
   async updateMessage(id: string, content: string) {
     const headers = await getAuthHeaders();

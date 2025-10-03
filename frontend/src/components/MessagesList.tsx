@@ -35,6 +35,11 @@ export function MessagesList({ messages, onDelete, onEdit }: MessagesListProps) 
                   <Badge variant="secondary" className="text-xs">
                     {new Date(message.created_at).toLocaleDateString()}
                   </Badge>
+                  {message.original_content && (
+                    <Badge variant="outline" className="text-xs bg-green-50 text-green-700 border-green-200">
+                      ✨ Enhanced
+                    </Badge>
+                  )}
                 </div>
                 <p className="text-sm text-muted-foreground">
                   {new Date(message.created_at).toLocaleTimeString()}

@@ -4,6 +4,7 @@ import dotenv from 'dotenv';
 import { supabase } from './config/supabase.js';
 import { authenticateToken, requireWallet } from './middleware/auth.js';
 import llmRoutes from './routes/llmRoutes.js';
+import messageRoutes from './routes/messageRoutes.js';
 
 // Load environment variables
 dotenv.config();
@@ -17,6 +18,9 @@ app.use(express.json());
 
 // LLM API routes
 app.use('/api/llm', authenticateToken, llmRoutes);
+
+// Message API routes
+app.use('/api/messages', authenticateToken, messageRoutes);
 
 // Health check endpoint
 app.get('/health', (req: Request, res: Response) => {
@@ -57,162 +61,6 @@ app.get('/test-supabase', async (req: Request, res: Response) => {
   }
 });
 
-// Messages API routes
-// Get all messages
-app.get('/api/messages', authenticateToken, async (req: Request, res: Response) => {
-  try {
-    const { data, error } = await supabase
-      .from('messages')
-      .select('*')
-      .order('created_at', { ascending: false });
-    
-    if (error) {
-      throw error;
-    }
-    
-    res.json({ 
-      success: true,
-      data: data || []
-    });
-  } catch (err) {
-    const error = err as Error;
-    console.error('Error fetching messages:', error);
-    res.status(500).json({ 
-      success: false,
-      error: 'Failed to fetch messages',
-      message: error.message 
-    });
-  }
-});
-
-// Create a new message
-app.post('/api/messages', authenticateToken, requireWallet, async (req: Request, res: Response) => {
-  try {
-    const { content, author } = req.body;
-    
-    if (!content) {
-      return res.status(400).json({
-        success: false,
-        error: 'Content is required'
-      });
-    }
-    
-    const { data, error } = await supabase
-      .from('messages')
-      .insert([
-        { 
-          content: content.trim(),
-          author: req.user?.wallet?.address || 'Anonymous'
-        }
-      ])
-      .select()
-      .single();
-    
-    if (error) {
-      throw error;
-    }
-    
-    res.status(201).json({ 
-      success: true,
-      data 
-    });
-  } catch (err) {
-    const error = err as Error;
-    console.error('Error creating message:', error);
-    res.status(500).json({ 
-      success: false,
-      error: 'Failed to create message',
-      message: error.message 
-    });
-  }
-});
-
-// Update a message
-app.put('/api/messages/:id', authenticateToken, requireWallet, async (req: Request, res: Response) => {
-  try {
-    const { id } = req.params;
-    const { content, author } = req.body;
-    
-    if (!content) {
-      return res.status(400).json({
-        success: false,
-        error: 'Content is required'
-      });
-    }
-    
-    const { data, error } = await supabase
-      .from('messages')
-      .update({ 
-        content: content.trim(),
-        author: req.user?.wallet?.address || 'Anonymous'
-      })
-      .eq('id', id)
-      .select()
-      .single();
-    
-    if (error) {
-      throw error;
-    }
-    
-    if (!data) {
-      return res.status(404).json({
-        success: false,
-        error: 'Message not found'
-      });
-    }
-    
-    res.json({ 
-      success: true,
-      data 
-    });
-  } catch (err) {
-    const error = err as Error;
-    console.error('Error updating message:', error);
-    res.status(500).json({ 
-      success: false,
-      error: 'Failed to update message',
-      message: error.message 
-    });
-  }
-});
-
-// Delete a message
-app.delete('/api/messages/:id', authenticateToken, requireWallet, async (req: Request, res: Response) => {
-  try {
-    const { id } = req.params;
-    
-    const { data, error } = await supabase
-      .from('messages')
-      .delete()
-      .eq('id', id)
-      .select()
-      .single();
-    
-    if (error) {
-      throw error;
-    }
-    
-    if (!data) {
-      return res.status(404).json({
-        success: false,
-        error: 'Message not found'
-      });
-    }
-    
-    res.json({ 
-      success: true,
-      message: 'Message deleted successfully'
-    });
-  } catch (err) {
-    const error = err as Error;
-    console.error('Error deleting message:', error);
-    res.status(500).json({ 
-      success: false,
-      error: 'Failed to delete message',
-      message: error.message 
-    });
-  }
-});
 
 // Basic API routes
 app.get('/api', (req: Request, res: Response) => {
@@ -224,6 +72,9 @@ app.get('/api', (req: Request, res: Response) => {
       'GET /test-supabase - Test Supabase connection',
       'GET /api/messages - Get all messages (🔒 Auth required)',
       'POST /api/messages - Create a new message (🔒 Auth + Wallet required)',
+      'POST /api/messages/enhance - Enhance a message using AI (🔒 Auth required)',
+      'POST /api/messages/enhanced - Create message with auto-enhancement (🔒 Auth + Wallet required)',
+      'GET /api/messages/enhancement-options - Get enhancement options (🔒 Auth required)',
       'PUT /api/messages/:id - Update a message (🔒 Auth + Wallet required)',
       'DELETE /api/messages/:id - Delete a message (🔒 Auth + Wallet required)',
       'POST /api/llm/generate - Generate text using fal.ai (🔒 Auth required)',
@@ -234,6 +85,11 @@ app.get('/api', (req: Request, res: Response) => {
     authentication: {
       required: 'Bearer token from Privy authentication',
       wallet_required: 'Connected wallet required for write operations'
+    },
+    features: {
+      message_enhancement: 'AI-powered message enhancement using fal.ai',
+      llm_integration: 'Direct access to multiple LLM models via fal.ai any-llm',
+      real_time_streaming: 'Real-time text generation with streaming support'
     }
   });
 });

@@ -56,14 +56,14 @@ export function MessageForm({
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="space-y-2">
             <Label htmlFor="content">
-              Message *
+              Message * (will be automatically enhanced)
             </Label>
             <Input
               id="content"
               type="text"
               value={content}
               onChange={(e) => setContent(e.target.value)}
-              placeholder="What's on your mind?"
+              placeholder="What's on your mind? (AI will enhance your message)"
               required
               disabled={isLoading}
             />
@@ -74,7 +74,7 @@ export function MessageForm({
               type="submit" 
               disabled={!content.trim() || isLoading}
             >
-              {isLoading ? 'Saving...' : (editingMessage ? 'Update' : 'Add')}
+              {isLoading ? 'Enhancing & Saving...' : (editingMessage ? 'Update' : 'Add Enhanced Message')}
             </Button>
             
             {editingMessage && (

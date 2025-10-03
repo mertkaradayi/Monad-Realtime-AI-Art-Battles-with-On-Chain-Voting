@@ -48,16 +48,28 @@ export default function Home() {
     }
   }
 
-  // Create a new message
+  // Create a new message with automatic enhancement
   const handleCreateMessage = async (content: string) => {
     try {
       setIsLoading(true)
       setError(null)
-      const result = await api.createMessage(content)
+      
+      // Show enhancement in progress
+      toast.info('Enhancing your message...')
+      
+      const result = await api.createEnhancedMessage(content, 'clarity', 'general')
       
       if (result.success) {
         setMessages([result.data, ...messages])
-        toast.success('Message created successfully!')
+        
+        // Show success message with enhancement info
+        if (result.data.enhancement) {
+          toast.success('Message enhanced and created successfully!', {
+            description: `Confidence: ${result.data.enhancement.confidence}%`
+          })
+        } else {
+          toast.success('Message created successfully!')
+        }
       } else {
         setError(result.error || 'Failed to create message')
         toast.error('Failed to create message')
@@ -70,6 +82,7 @@ export default function Home() {
       } else {
         setError('Failed to connect to the backend server')
         console.error('Error creating message:', err)
+        toast.error('Failed to enhance message, please try again')
       }
     } finally {
       setIsLoading(false)
@@ -170,7 +183,7 @@ export default function Home() {
               Battle Semantic
             </h1>
             <p className="text-muted-foreground">
-              A simple example of storing and retrieving data with Supabase
+              AI-powered message enhancement with Supabase storage
             </p>
           </div>
           <div className="ml-4">
@@ -235,9 +248,10 @@ export default function Home() {
                 How this works:
               </h3>
               <ul className="space-y-1 text-sm">
+                <li>• Messages are automatically enhanced using AI (fal.ai)</li>
                 <li>• Frontend sends HTTP requests to the backend API</li>
                 <li>• Backend uses Supabase client to interact with the database</li>
-                <li>• Data is stored in a PostgreSQL table called "messages"</li>
+                <li>• Enhanced messages are stored with original content preserved</li>
                 <li>• Real-time updates could be added with Supabase subscriptions</li>
               </ul>
             </div>
