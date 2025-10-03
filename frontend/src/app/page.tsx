@@ -7,6 +7,7 @@ import { MessagesList } from '@/components/MessagesList'
 import { MessageForm } from '@/components/MessageForm'
 import { AuthButton } from '@/components/AuthButton'
 import { LoginPage } from '@/components/LoginPage'
+import ThemeToggle from '@/components/ThemeToggle'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
@@ -199,7 +200,8 @@ export default function Home() {
               AI-powered message enhancement with Supabase storage
             </p>
           </div>
-          <div className="ml-4">
+          <div className="ml-4 flex items-center gap-2">
+            <ThemeToggle />
             <AuthButton />
           </div>
         </div>
