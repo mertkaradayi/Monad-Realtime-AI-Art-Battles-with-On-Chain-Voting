@@ -14,6 +14,7 @@ import {
 } from './middleware/middleware.js';
 import llmRoutes from './routes/llm.js';
 import messageRoutes from './routes/messages.js';
+import battleRoutes from './routes/battles.js';
 
 // Validate configuration on startup
 if (!envValidation.isValid) {
@@ -41,6 +42,9 @@ app.use('/api/llm', auth, llmRateLimiter, llmRoutes);
 
 // Message API routes
 app.use('/api/messages', auth, messageRoutes);
+
+// Battle API routes
+app.use('/api/battles', auth, battleRoutes);
 
 // Health check endpoint
 app.get('/health', (req: Request, res: Response) => {
@@ -100,6 +104,10 @@ app.get('/api', (req: Request, res: Response) => {
       'POST /api/llm/generate - Generate text using fal.ai (🔒 Auth required)',
       'POST /api/llm/stream - Generate text with streaming (🔒 Auth required)',
       'GET /api/llm/models - Get available models (🔒 Auth required)',
+      'POST /api/battles - Create a new battle (🔒 Auth + Wallet required)',
+      'GET /api/battles - Get all battles (🔒 Auth required)',
+      'GET /api/battles/:id - Get battle by ID (🔒 Auth required)',
+      'POST /api/battles/:id/join - Join battle (🔒 Auth + Wallet required)',
       'GET /api - This endpoint'
     ],
     authentication: {
@@ -109,7 +117,8 @@ app.get('/api', (req: Request, res: Response) => {
     features: {
       message_enhancement: 'AI-powered message enhancement using fal.ai',
       llm_integration: 'Direct access to multiple LLM models via fal.ai any-llm',
-      real_time_streaming: 'Real-time text generation with streaming support'
+      real_time_streaming: 'Real-time text generation with streaming support',
+      battle_system: 'AI art battles with concept generation and QR code joining'
     }
   });
 });

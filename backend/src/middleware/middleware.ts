@@ -89,6 +89,11 @@ export const requireWallet = (req: Request, res: Response, next: NextFunction) =
 };
 
 /**
+ * Combined authentication and wallet requirement middleware
+ */
+export const authenticateWallet = [auth, requireWallet];
+
+/**
  * Security middleware
  */
 export const security = helmet({

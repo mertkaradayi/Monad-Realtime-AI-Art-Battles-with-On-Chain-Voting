@@ -147,4 +147,65 @@ export const api = {
     
     return response.json();
   },
+
+  // Battle API functions
+  // Create a new battle
+  async createBattle() {
+    const headers = await getAuthHeaders();
+    const response = await fetch(buildUrl('/api/battles'), {
+      method: 'POST',
+      headers,
+    });
+    
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+    
+    return response.json();
+  },
+
+  // Get all battles
+  async getBattles() {
+    const headers = await getAuthHeaders();
+    const response = await fetch(buildUrl('/api/battles'), {
+      method: 'GET',
+      headers,
+    });
+    
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+    
+    return response.json();
+  },
+
+  // Get battle by ID
+  async getBattle(id: string) {
+    const headers = await getAuthHeaders();
+    const response = await fetch(buildUrl(`/api/battles/${id}`), {
+      method: 'GET',
+      headers,
+    });
+    
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+    
+    return response.json();
+  },
+
+  // Join battle
+  async joinBattle(id: string) {
+    const headers = await getAuthHeaders();
+    const response = await fetch(buildUrl(`/api/battles/${id}/join`), {
+      method: 'POST',
+      headers,
+    });
+    
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+    
+    return response.json();
+  },
 };

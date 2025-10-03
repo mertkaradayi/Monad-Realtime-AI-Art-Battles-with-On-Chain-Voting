@@ -1,175 +1,65 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import { usePrivy } from '@privy-io/react-auth'
-import { Message } from '@/lib/supabase'
-import { MessagesList } from '@/components/MessagesList'
-import { MessageForm } from '@/components/MessageForm'
 import { AuthButton } from '@/components/AuthButton'
 import { LoginPage } from '@/components/LoginPage'
 import ThemeToggle from '@/components/ThemeToggle'
 import { Alert, AlertDescription } from '@/components/ui/alert'
-import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Toaster } from '@/components/ui/sonner'
 import { toast } from 'sonner'
 import { api } from '@/lib/api'
 
+interface Battle {
+  id: string
+  concept: string
+  status: 'waiting' | 'active' | 'voting' | 'completed' | 'cancelled'
+  created_at: string
+  joining_qr_data: string | null
+  joiningQR?: string
+}
+
 export default function Home() {
   const { ready, authenticated } = usePrivy()
-  const [messages, setMessages] = useState<Message[]>([])
-  const [editingMessage, setEditingMessage] = useState<Message | null>(null)
+  const [battle, setBattle] = useState<Battle | null>(null)
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
-  const [messageToDelete, setMessageToDelete] = useState<Message | null>(null)
 
-  // Fetch messages from the backend
-  const fetchMessages = async () => {
+  // Create a new battle
+  const handleCreateBattle = async () => {
     try {
       setIsLoading(true)
       setError(null)
-      const result = await api.getMessages()
+      
+      toast.info('Creating battle with AI concept...')
+      
+      const result = await api.createBattle()
       
       if (result.success) {
-        setMessages(result.data)
+        setBattle(result.data)
+        toast.success('Battle created successfully!', {
+          description: `Concept: "${result.data.concept}"`
+        })
       } else {
-        setError(result.error || 'Failed to fetch messages')
-        toast.error('Failed to fetch messages')
+        setError(result.error || 'Failed to create battle')
+        toast.error('Failed to create battle')
       }
     } catch (err) {
       const error = err as Error;
       if (error.message.includes('Authentication required')) {
-        setError('Please connect your wallet to view messages')
+        setError('Please connect your wallet to create battles')
         toast.error('Authentication required')
       } else {
         setError('Failed to connect to the backend server')
-        console.error('Error fetching messages:', err)
+        console.error('Error creating battle:', err)
+        toast.error('Failed to create battle, please try again')
       }
     } finally {
       setIsLoading(false)
     }
   }
-
-  // Create a new message with automatic enhancement
-  const handleCreateMessage = async (content: string) => {
-    try {
-      setIsLoading(true)
-      setError(null)
-      
-      // Show enhancement in progress
-      toast.info('Enhancing your message...')
-      
-      const result = await api.createEnhancedMessage(content, 'clarity', 'general')
-      
-      if (result.success) {
-        setMessages([result.data, ...messages])
-        
-        // Show success message with enhancement info
-        if (result.data.enhancement) {
-          toast.success('Message enhanced and created successfully!', {
-            description: `Confidence: ${result.data.enhancement.confidence}%`
-          })
-        } else {
-          toast.success('Message created successfully!')
-        }
-      } else {
-        setError(result.error || 'Failed to create message')
-        toast.error('Failed to create message')
-      }
-    } catch (err) {
-      const error = err as Error;
-      if (error.message.includes('Authentication required')) {
-        setError('Please connect your wallet to create messages')
-        toast.error('Authentication required')
-      } else {
-        setError('Failed to connect to the backend server')
-        console.error('Error creating message:', err)
-        toast.error('Failed to enhance message, please try again')
-      }
-    } finally {
-      setIsLoading(false)
-    }
-  }
-
-  // Update a message
-  const handleUpdateMessage = async (id: string, content: string) => {
-    try {
-      setIsLoading(true)
-      setError(null)
-      const result = await api.updateMessage(id, content)
-      
-      if (result.success) {
-        setMessages(messages.map(msg => msg.id === id ? result.data : msg))
-        setEditingMessage(null)
-        toast.success('Message updated successfully!')
-      } else {
-        setError(result.error || 'Failed to update message')
-        toast.error('Failed to update message')
-      }
-    } catch (err) {
-      const error = err as Error;
-      if (error.message.includes('Authentication required')) {
-        setError('Please connect your wallet to update messages')
-        toast.error('Authentication required')
-      } else {
-        setError('Failed to connect to the backend server')
-        console.error('Error updating message:', err)
-      }
-    } finally {
-      setIsLoading(false)
-    }
-  }
-
-  // Delete a message
-  const handleDeleteMessage = async () => {
-    if (!messageToDelete) {
-      return
-    }
-
-    try {
-      setIsLoading(true)
-      setError(null)
-      const result = await api.deleteMessage(messageToDelete.id)
-      
-      if (result.success) {
-        setMessages(prev => prev.filter(msg => msg.id !== messageToDelete.id))
-        setMessageToDelete(null)
-        toast.success('Message deleted successfully!')
-      } else {
-        setError(result.error || 'Failed to delete message')
-        toast.error('Failed to delete message')
-      }
-    } catch (err) {
-      const error = err as Error;
-      if (error.message.includes('Authentication required')) {
-        setError('Please connect your wallet to delete messages')
-        toast.error('Authentication required')
-      } else {
-        setError('Failed to connect to the backend server')
-        console.error('Error deleting message:', err)
-      }
-    } finally {
-      setIsLoading(false)
-    }
-  }
-
-  const requestDeleteMessage = (message: Message) => {
-    setMessageToDelete(message)
-  }
-
-  const closeDeleteDialog = () => {
-    if (!isLoading) {
-      setMessageToDelete(null)
-    }
-  }
-
-  // Load messages on component mount
-  useEffect(() => {
-    if (authenticated) {
-      fetchMessages()
-    }
-  }, [authenticated])
 
   // Show loading state while Privy initializes
   if (!ready) {
@@ -190,14 +80,14 @@ export default function Home() {
 
   return (
     <div className="min-h-screen bg-background py-8">
-      <div className="max-w-4xl mx-auto px-4">
+      <div className="max-w-6xl mx-auto px-4">
         <div className="flex justify-between items-center mb-8">
           <div className="text-center flex-1">
             <h1 className="text-4xl font-bold text-foreground mb-2">
-              Battle Semantic
+              ⚔️ Realtime AI Art Battles
             </h1>
-            <p className="text-muted-foreground">
-              AI-powered message enhancement with Supabase storage
+            <p className="text-muted-foreground text-lg">
+              AI-powered art duels. Two prompts, two images, instant on-chain votes — winner mints as NFT.
             </p>
           </div>
           <div className="ml-4 flex items-center gap-2">
@@ -214,46 +104,114 @@ export default function Home() {
                 <Button 
                   variant="link"
                   size="sm"
-                  onClick={fetchMessages}
+                  onClick={() => setError(null)}
                 >
-                  Try again
+                  Dismiss
                 </Button>
               </div>
             </AlertDescription>
           </Alert>
         )}
 
-        <div className="space-y-6">
-          <MessageForm
-            onSubmit={handleCreateMessage}
-            onUpdate={handleUpdateMessage}
-            editingMessage={editingMessage}
-            onCancel={() => setEditingMessage(null)}
-            isLoading={isLoading}
-          />
+        <div className="space-y-8">
+          {!battle ? (
+            // Battle Creation Interface
+            <Card className="max-w-2xl mx-auto">
+              <CardHeader className="text-center">
+                <CardTitle className="text-2xl">Create New Battle</CardTitle>
+                <p className="text-muted-foreground">
+                  Generate a unique AI art concept and create a battle for participants to join
+                </p>
+              </CardHeader>
+              <CardContent className="text-center space-y-6">
+                <div className="space-y-4">
+                  <div className="text-sm text-muted-foreground space-y-2">
+                    <p>🎨 AI will generate a unique art concept</p>
+                    <p>📱 QR code will be created for participants to join</p>
+                    <p>⚔️ First 2 users to scan become the battle participants</p>
+                  </div>
+                  
+                  <Button 
+                    onClick={handleCreateBattle}
+                    disabled={isLoading}
+                    size="lg"
+                    className="w-full h-16 text-lg font-semibold"
+                  >
+                    {isLoading ? (
+                      <div className="flex items-center gap-2">
+                        <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
+                        Creating Battle...
+                      </div>
+                    ) : (
+                      '🎯 Create Battle'
+                    )}
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          ) : (
+            // Battle Display Interface
+            <div className="space-y-6">
+              {/* Battle Concept */}
+              <Card>
+                <CardHeader>
+                  <CardTitle className="text-center text-xl">Battle Concept</CardTitle>
+                </CardHeader>
+                <CardContent className="text-center">
+                  <div className="bg-muted p-6 rounded-lg">
+                    <p className="text-lg font-medium text-foreground">
+                      "{battle.concept}"
+                    </p>
+                    <p className="text-sm text-muted-foreground mt-2">
+                      Participants will complete this concept to create their art
+                    </p>
+                  </div>
+                </CardContent>
+              </Card>
 
-          <div>
-            <div className="flex justify-between items-center mb-4">
-              <div className="flex items-center gap-2">
-                <h2 className="text-2xl font-semibold text-foreground">Messages</h2>
-                <Badge variant="outline">{messages.length}</Badge>
+              {/* QR Code Display */}
+              {battle.joiningQR && (
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="text-center text-xl">Scan to Join Battle</CardTitle>
+                    <p className="text-center text-muted-foreground">
+                      First 2 users to scan will become participants
+                    </p>
+                  </CardHeader>
+                  <CardContent className="text-center space-y-4">
+                    <div className="flex justify-center">
+                      <img 
+                        src={battle.joiningQR} 
+                        alt="Battle Join QR Code"
+                        className="w-80 h-80 border rounded-lg"
+                      />
+                    </div>
+                    <div className="text-sm text-muted-foreground">
+                      <p>Battle ID: {battle.id}</p>
+                      <p>Status: {battle.status}</p>
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
+
+              {/* Battle Actions */}
+              <div className="flex justify-center gap-4">
+                <Button 
+                  variant="outline" 
+                  onClick={() => setBattle(null)}
+                  disabled={isLoading}
+                >
+                  Create New Battle
+                </Button>
+                <Button 
+                  onClick={() => window.location.reload()}
+                  disabled={isLoading}
+                >
+                  Refresh Status
+                </Button>
               </div>
-              <Button
-                variant="link"
-                size="sm"
-                onClick={fetchMessages}
-                disabled={isLoading}
-              >
-                {isLoading ? 'Loading...' : 'Refresh'}
-              </Button>
             </div>
-            
-            <MessagesList
-              messages={messages}
-              onDelete={requestDeleteMessage}
-              onEdit={setEditingMessage}
-            />
-          </div>
+          )}
         </div>
 
         <Alert className="mt-12">
@@ -263,11 +221,13 @@ export default function Home() {
                 How this works:
               </h3>
               <ul className="space-y-1 text-sm">
-                <li>• Messages are automatically enhanced using AI (fal.ai)</li>
-                <li>• Frontend sends HTTP requests to the backend API</li>
-                <li>• Backend uses Supabase client to interact with the database</li>
-                <li>• Enhanced messages are stored with original content preserved</li>
-                <li>• Real-time updates could be added with Supabase subscriptions</li>
+                <li>• AI generates a unique art concept for each battle</li>
+                <li>• QR code allows participants to join the battle</li>
+                <li>• First 2 users to scan become the battle participants</li>
+                <li>• Participants complete the concept to create their art prompts</li>
+                <li>• AI generates images from the completed prompts</li>
+                <li>• Audience votes on the best artwork</li>
+                <li>• Winner's artwork is minted as an NFT on Monad</li>
               </ul>
             </div>
           </AlertDescription>
@@ -275,34 +235,6 @@ export default function Home() {
         
         <Toaster />
       </div>
-
-      <Dialog open={!!messageToDelete} onOpenChange={(open) => {
-        if (!open) {
-          closeDeleteDialog()
-        }
-      }}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Delete message</DialogTitle>
-            <DialogDescription>
-              This action cannot be undone. The selected message will be permanently removed.
-            </DialogDescription>
-          </DialogHeader>
-          {messageToDelete && (
-            <p className="text-sm text-muted-foreground">
-              &ldquo;{messageToDelete.content}&rdquo;
-            </p>
-          )}
-          <DialogFooter>
-            <Button variant="outline" onClick={closeDeleteDialog} disabled={isLoading}>
-              Cancel
-            </Button>
-            <Button variant="destructive" onClick={handleDeleteMessage} disabled={isLoading}>
-              {isLoading ? 'Deleting...' : 'Delete'}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
     </div>
   )
 }

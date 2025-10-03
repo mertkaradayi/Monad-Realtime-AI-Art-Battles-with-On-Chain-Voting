@@ -14,6 +14,54 @@ export type Database = {
   }
   public: {
     Tables: {
+      battles: {
+        Row: {
+          completed_at: string | null
+          concept: string
+          created_at: string | null
+          creator_wallet: string | null
+          id: string
+          joining_qr_data: string | null
+          participant1_wallet: string | null
+          participant2_wallet: string | null
+          status: Database["public"]["Enums"]["battle_status"] | null
+          total_votes: number | null
+          updated_at: string | null
+          voting_qr_data: string | null
+          winner_wallet: string | null
+        }
+        Insert: {
+          completed_at?: string | null
+          concept: string
+          created_at?: string | null
+          creator_wallet?: string | null
+          id?: string
+          joining_qr_data?: string | null
+          participant1_wallet?: string | null
+          participant2_wallet?: string | null
+          status?: Database["public"]["Enums"]["battle_status"] | null
+          total_votes?: number | null
+          updated_at?: string | null
+          voting_qr_data?: string | null
+          winner_wallet?: string | null
+        }
+        Update: {
+          completed_at?: string | null
+          concept?: string
+          created_at?: string | null
+          creator_wallet?: string | null
+          id?: string
+          joining_qr_data?: string | null
+          participant1_wallet?: string | null
+          participant2_wallet?: string | null
+          status?: Database["public"]["Enums"]["battle_status"] | null
+          total_votes?: number | null
+          updated_at?: string | null
+          voting_qr_data?: string | null
+          winner_wallet?: string | null
+        }
+        Relationships: []
+      }
       messages: {
         Row: {
           author: string | null
@@ -52,7 +100,7 @@ export type Database = {
       [_ in never]: never
     }
     Enums: {
-      [_ in never]: never
+      battle_status: "waiting" | "active" | "voting" | "completed" | "cancelled"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -179,16 +227,23 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      battle_status: ["waiting", "active", "voting", "completed", "cancelled"],
+    },
   },
 } as const
 
-// Convenience types for the messages table
+// Convenience types for the battles table
+export type Battle = Tables<'battles'>
+export type BattleInsert = TablesInsert<'battles'>
+export type BattleUpdate = TablesUpdate<'battles'>
+
+// Convenience types for the messages table (existing)
 export type Message = Tables<'messages'>
 export type MessageInsert = TablesInsert<'messages'>
 export type MessageUpdate = TablesUpdate<'messages'>
 
-// Enhancement data type for better type safety
+// Enhancement data type for better type safety (existing)
 export interface EnhancementData {
   type: 'grammar' | 'style' | 'clarity' | 'tone'
   confidence: number
@@ -197,4 +252,3 @@ export interface EnhancementData {
   enhanced_score?: number
   timestamp: string
 }
-
