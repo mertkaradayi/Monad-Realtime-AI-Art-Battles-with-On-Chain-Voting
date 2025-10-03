@@ -5,6 +5,7 @@ This project uses structured rule files located in `.cursor/rules/` folder:
 
 - **@frontend-shadcn.mdc** - Frontend development rules (shadcn/ui components only + MCP integration)
 - **@project-standards.mdc** - Project-wide development standards and architecture
+- **@supabase-mcp.mdc** - Database schema management rules (Supabase MCP tools only)
 
 **IMPORTANT**: Always reference these rule files for detailed guidelines and requirements.
 
@@ -14,6 +15,15 @@ This project uses structured rule files located in `.cursor/rules/` folder:
 - **REQUIRED**: Import from `@/components/ui/*` exclusively
 - **STYLING**: Use shadcn design tokens (`text-foreground`, `bg-background`, etc.)
 - **MCP INTEGRATION**: Use shadcn MCP for component discovery and management
+
+## 🗄️ **Database Management**
+- **MANDATORY**: Use Supabase MCP tools exclusively for all database operations
+- **FORBIDDEN**: Manual SQL file editing or direct database modifications
+- **REQUIRED**: All schema changes via `mcp_supabase_apply_migration`
+- **INTEGRATION**: MCP is the single source of truth for database schema
+- **WORKFLOW**: AI-friendly commands for schema changes (e.g., "Add column X to table Y")
+- **TYPES**: Auto-generate TypeScript types from current schema
+- **DOCUMENTATION**: Update schema.md automatically after changes
 
 ## 🔐 **Authentication**
 - **AUTHENTICATION PROVIDER**: Use Privy for user authentication
@@ -52,6 +62,8 @@ This project uses structured rule files located in `.cursor/rules/` folder:
 6. Ensure accessibility compliance
 7. **AUTHENTICATION**: Use Privy hooks (`usePrivy`, `useWallets`) for auth state
 8. **PROTECTED ROUTES**: Implement auth guards using Privy authentication status
+9. **DATABASE CHANGES**: Use Supabase MCP tools for all schema modifications
+10. **SCHEMA UPDATES**: Update documentation and regenerate TypeScript types after changes
 
 ## 🚨 **Enforcement**
 - **ALWAYS** suggest shadcn components for any UI element
@@ -61,3 +73,6 @@ This project uses structured rule files located in `.cursor/rules/` folder:
 - **MANDATORY** use shadcn MCP for component discovery and management
 - **AUTHENTICATION**: Always use Privy for user authentication and wallet connection
 - **SECURITY**: Implement proper auth guards and protected routes
+- **DATABASE**: Always use Supabase MCP tools for schema changes
+- **SCHEMA**: Never suggest manual SQL file editing or direct database modifications
+- **TYPES**: Auto-generate TypeScript types after any schema changes

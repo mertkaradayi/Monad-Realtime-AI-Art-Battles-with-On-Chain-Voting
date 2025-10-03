@@ -1,8 +1,9 @@
 import { fal } from '@fal-ai/client';
+import { config } from '../config/config.js';
 
-// Configure fal.ai client
+// Configure fal.ai client with centralized configuration
 fal.config({
-  credentials: process.env.FAL_KEY || '',
+  credentials: config.external.fal.apiKey,
 });
 
 export interface LLMRequest {

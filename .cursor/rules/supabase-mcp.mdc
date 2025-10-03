@@ -1,0 +1,181 @@
+# Supabase MCP Database Management Rules
+
+## 🎯 **MANDATORY: Supabase MCP Only for Database Operations**
+
+### **CRITICAL RULE:**
+- **ALL database schema changes MUST use Supabase MCP tools exclusively**
+- **NO manual SQL file editing** for schema changes
+- **NO direct database modifications** outside of MCP
+- **MCP is the single source of truth** for database schema
+
+### **Required MCP Tools Usage:**
+
+```typescript
+// ✅ CORRECT - Use MCP tools for all database operations
+import { mcp_supabase_list_tables } from '@/lib/supabase-mcp'
+import { mcp_supabase_apply_migration } from '@/lib/supabase-mcp'
+import { mcp_supabase_execute_sql } from '@/lib/supabase-mcp'
+
+// ❌ FORBIDDEN - Direct SQL file editing or manual database changes
+// Editing create_messages_table.sql directly
+// Making changes in Supabase Studio UI
+// Writing raw SQL without MCP
+```
+
+### **Available MCP Database Operations:**
+- `mcp_supabase_list_tables` - Read current schema
+- `mcp_supabase_apply_migration` - Apply schema changes
+- `mcp_supabase_execute_sql` - Execute custom queries
+- `mcp_supabase_get_project` - Get project details
+- `mcp_supabase_generate_typescript_types` - Generate TypeScript types
+
+### **Database Workflow Rules:**
+- **Schema Changes**: Use `mcp_supabase_apply_migration` for all DDL operations
+- **Data Queries**: Use `mcp_supabase_execute_sql` for SELECT/INSERT/UPDATE/DELETE
+- **Schema Reading**: Use `mcp_supabase_list_tables` to understand current structure
+- **Type Generation**: Use `mcp_supabase_generate_typescript_types` for TypeScript types
+
+### **AI Command Patterns:**
+When user requests database changes, AI must:
+
+1. **Read Current Schema:**
+   ```typescript
+   // Always start by reading current state
+   const currentTables = await mcp_supabase_list_tables(project_id)
+   ```
+
+2. **Apply Changes via Migration:**
+   ```typescript
+   // Use migrations for all schema changes
+   await mcp_supabase_apply_migration({
+     project_id,
+     name: "add_new_column",
+     query: "ALTER TABLE messages ADD COLUMN new_field TEXT"
+   })
+   ```
+
+3. **Update Documentation:**
+   ```typescript
+   // Update schema.md file after changes
+   // Generate new TypeScript types
+   ```
+
+### **File Management Rules:**
+- **schema.md**: Human-readable current schema (AI updates this)
+- **types/database.ts**: Generated TypeScript types (AI generates this)
+- **migrations/**: Applied migration history (AI creates these)
+- **NO manual SQL files**: Remove create_messages_table.sql and similar
+
+### **AI Workflow Examples:**
+
+#### Adding a New Column:
+```
+User: "Add a 'category' column to messages table"
+AI Process:
+1. Read current schema via MCP
+2. Apply migration via MCP
+3. Update schema.md
+4. Generate TypeScript types
+5. Report success
+```
+
+#### Creating a New Table:
+```
+User: "Create a 'users' table with wallet_address and created_at"
+AI Process:
+1. Read current schema via MCP
+2. Apply migration via MCP
+3. Update schema.md
+4. Generate TypeScript types
+5. Report success
+```
+
+#### Modifying Existing Schema:
+```
+User: "Change 'author' column to be NOT NULL"
+AI Process:
+1. Read current schema via MCP
+2. Apply migration via MCP
+3. Update schema.md
+4. Generate TypeScript types
+5. Report success
+```
+
+### **Project Structure:**
+```
+backend/
+├── src/
+├── database/
+│   ├── schema.md              # Current schema documentation
+│   ├── types/
+│   │   └── database.ts        # Generated TypeScript types
+│   └── migrations/            # Applied migration history
+│       ├── 001_initial_messages.sql
+│       ├── 002_add_original_content.sql
+│       └── 003_add_enhancement_data.sql
+```
+
+### **Schema Documentation Format:**
+```markdown
+# Database Schema
+
+## Messages Table
+- id: UUID (Primary Key, Auto-generated)
+- content: TEXT (Required)
+- author: VARCHAR(100) (Default: 'Anonymous')
+- created_at: TIMESTAMPTZ (Auto-generated)
+- updated_at: TIMESTAMPTZ (Auto-generated)
+- original_content: TEXT (Optional, "Original message content before enhancement")
+- enhancement_data: JSONB (Optional, "JSON data containing enhancement details")
+
+## Recent Changes
+- 2024-12-01: Added original_content and enhancement_data columns
+```
+
+### **TypeScript Integration:**
+```typescript
+// types/database.ts (AI-generated from MCP)
+export interface Message {
+  id: string
+  content: string
+  author: string
+  created_at: string
+  updated_at: string
+  original_content?: string
+  enhancement_data?: any
+}
+```
+
+### **Migration Naming Convention:**
+- Format: `{number}_{description}.sql`
+- Examples: `001_initial_messages.sql`, `002_add_category_column.sql`
+- Sequential numbering for chronological order
+
+### **Error Handling:**
+- **MCP Connection Issues**: Report error and suggest checking project ID
+- **Migration Failures**: Rollback and report specific error
+- **Schema Conflicts**: Read current state and suggest resolution
+
+### **Security Rules:**
+- **Never expose project credentials** in generated files
+- **Use environment variables** for project IDs
+- **Validate all SQL** before applying migrations
+- **Test migrations** in development first
+
+---
+
+## 🚨 **ENFORCEMENT:**
+- **ALWAYS** use MCP tools for database operations
+- **NEVER** suggest manual SQL file editing
+- **REQUIRE** MCP workflow for all schema changes
+- **PRIORITIZE** MCP as single source of truth
+- **MANDATORY** update documentation after changes
+- **REQUIRE** TypeScript type generation after schema changes
+
+## 📋 **AI Command Examples:**
+- "Show me the current messages table schema"
+- "Add a 'status' column to messages with ENUM('pending', 'processed', 'failed')"
+- "Create an index on the 'author' column for better performance"
+- "Add a foreign key relationship between messages and users tables"
+- "Generate TypeScript types for the current schema"
+- "Update the schema documentation"

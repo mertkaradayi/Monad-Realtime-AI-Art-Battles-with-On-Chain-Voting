@@ -1,4 +1,7 @@
--- Create a simple messages table for testing Supabase integration
+-- Initial messages table creation
+-- Applied: 2024-12-01
+-- Description: Created the basic messages table with core columns
+
 CREATE TABLE IF NOT EXISTS messages (
     id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
     content TEXT NOT NULL,
@@ -32,3 +35,4 @@ CREATE TRIGGER update_messages_updated_at
     BEFORE UPDATE ON messages 
     FOR EACH ROW 
     EXECUTE FUNCTION update_updated_at_column();
+

@@ -1,23 +1,52 @@
 import express, { Request, Response, NextFunction } from 'express';
 import cors from 'cors';
-import dotenv from 'dotenv';
+import { config } from './config/config.js';
+import { envValidation } from './config/env.js';
 import { supabase } from './config/supabase.js';
 import { authenticateToken, requireWallet } from './middleware/auth.js';
+import { 
+  getSecurityConfig, 
+  securityValidator 
+} from './middleware/security.js';
+import { 
+  errorHandler, 
+  notFoundHandler, 
+  unhandledRejectionHandler,
+  uncaughtExceptionHandler,
+  gracefulShutdown 
+} from './middleware/errorHandler.js';
 import llmRoutes from './routes/llmRoutes.js';
 import messageRoutes from './routes/messageRoutes.js';
 
-// Load environment variables
-dotenv.config();
+// Validate configuration on startup
+if (!envValidation.isValid) {
+  console.error('❌ Configuration validation failed. Exiting...');
+  process.exit(1);
+}
 
 const app = express();
-const PORT: number = parseInt(process.env.PORT || '3001', 10);
+const PORT = config.server.port;
 
-// Middleware
-app.use(cors());
-app.use(express.json());
+// Get security configuration
+const security = getSecurityConfig();
 
-// LLM API routes
-app.use('/api/llm', authenticateToken, llmRoutes);
+// Security middleware (order matters!)
+app.use(security.headers);
+app.use(security.helmet);
+app.use(security.compression);
+app.use(security.logging);
+app.use(securityValidator);
+
+// CORS and body parsing
+app.use(cors(config.server.cors));
+app.use(express.json({ limit: '10mb' }));
+app.use(express.urlencoded({ extended: true, limit: '10mb' }));
+
+// Rate limiting
+app.use(security.rateLimits.general);
+
+// LLM API routes (with LLM-specific rate limiting)
+app.use('/api/llm', authenticateToken, security.rateLimits.llm, llmRoutes);
 
 // Message API routes
 app.use('/api/messages', authenticateToken, messageRoutes);
@@ -94,27 +123,26 @@ app.get('/api', (req: Request, res: Response) => {
   });
 });
 
-// Error handling middleware
-app.use((err: Error, req: Request, res: Response, next: NextFunction) => {
-  console.error(err.stack);
-  res.status(500).json({ 
-    error: 'Something went wrong!',
-    message: err.message 
-  });
-});
+// Error handling middleware (must be last)
+app.use(notFoundHandler);
+app.use(errorHandler);
 
-// 404 handler
-app.use('*', (req: Request, res: Response) => {
-  res.status(404).json({ 
-    error: 'Route not found',
-    path: req.originalUrl 
-  });
-});
-
-app.listen(PORT, () => {
+// Start server
+const server = app.listen(PORT, () => {
   console.log(`🚀 Backend server running on port ${PORT}`);
   console.log(`📊 Health check: http://localhost:${PORT}/health`);
   console.log(`🔗 Supabase test: http://localhost:${PORT}/test-supabase`);
   console.log(`📋 API info: http://localhost:${PORT}/api`);
+  console.log(`🔒 Security: ${security.isProduction ? 'Production mode' : 'Development mode'}`);
 });
+
+// Handle unhandled promise rejections
+process.on('unhandledRejection', unhandledRejectionHandler);
+
+// Handle uncaught exceptions
+process.on('uncaughtException', uncaughtExceptionHandler);
+
+// Handle graceful shutdown
+process.on('SIGTERM', () => gracefulShutdown('SIGTERM', server));
+process.on('SIGINT', () => gracefulShutdown('SIGINT', server));
 

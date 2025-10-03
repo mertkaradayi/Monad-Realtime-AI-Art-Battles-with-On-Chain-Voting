@@ -1,10 +1,11 @@
 import { Request, Response, NextFunction } from 'express';
 import { PrivyClient } from '@privy-io/server-auth';
+import { config } from '../config/config.js';
 
-// Initialize Privy client
+// Initialize Privy client with centralized configuration
 const privy = new PrivyClient(
-  process.env.PRIVY_APP_ID!,
-  process.env.PRIVY_APP_SECRET!
+  config.auth.privy.appId,
+  config.auth.privy.appSecret
 );
 
 // Extend Express Request type to include user
