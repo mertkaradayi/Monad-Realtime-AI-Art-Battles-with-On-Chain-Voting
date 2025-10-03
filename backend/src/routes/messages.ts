@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import { MessageController } from '../controllers/messages.js';
-import { auth, requireWallet } from '../middleware/middleware.js';
+import { requireWallet } from '../middleware/middleware.js';
 
 const router = Router();
 
@@ -9,28 +9,28 @@ const router = Router();
  * @desc Get all messages
  * @access Private (requires authentication)
  */
-router.get('/', auth, requireWallet, MessageController.getMessages);
+router.get('/', requireWallet, MessageController.getMessages);
 
 /**
  * @route POST /api/messages
  * @desc Create a new message
  * @access Private (requires authentication + wallet)
  */
-router.post('/', auth, requireWallet, MessageController.createMessage);
+router.post('/', requireWallet, MessageController.createMessage);
 
 /**
  * @route POST /api/messages/enhance
  * @desc Enhance a message using AI
  * @access Private (requires authentication)
  */
-router.post('/enhance', auth, MessageController.enhanceMessage);
+router.post('/enhance', MessageController.enhanceMessage);
 
 /**
  * @route POST /api/messages/enhanced
  * @desc Create a message with automatic enhancement
  * @access Private (requires authentication + wallet)
  */
-router.post('/enhanced', auth, requireWallet, MessageController.createEnhancedMessage);
+router.post('/enhanced', requireWallet, MessageController.createEnhancedMessage);
 
 /**
  * @route GET /api/messages/enhancement-options
@@ -44,13 +44,13 @@ router.get('/enhancement-options', MessageController.getEnhancementOptions);
  * @desc Update a message
  * @access Private (requires authentication + wallet)
  */
-router.put('/:id', auth, requireWallet, MessageController.updateMessage);
+router.put('/:id', requireWallet, MessageController.updateMessage);
 
 /**
  * @route DELETE /api/messages/:id
  * @desc Delete a message
  * @access Private (requires authentication + wallet)
  */
-router.delete('/:id', auth, requireWallet, MessageController.deleteMessage);
+router.delete('/:id', requireWallet, MessageController.deleteMessage);
 
 export default router;

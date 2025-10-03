@@ -1,6 +1,7 @@
 import { Request, Response } from 'express';
 import { FalService } from '../services/fal.js';
 import { LLMRequest } from '../types.js';
+import { config } from '../config/config.js';
 
 export class LLMController {
   /**
@@ -49,9 +50,10 @@ export class LLMController {
       });
     } catch (error) {
       console.error('LLM generation error:', error);
+      const includeDetails = config.server.nodeEnv !== 'production';
       res.status(500).json({
         error: 'Failed to generate text',
-        message: error instanceof Error ? error.message : 'Unknown error'
+        ...(includeDetails ? { message: error instanceof Error ? error.message : 'Unknown error' } : {})
       });
     }
   }
@@ -72,9 +74,10 @@ export class LLMController {
       });
     } catch (error) {
       console.error('Get models error:', error);
+      const includeDetails = config.server.nodeEnv !== 'production';
       res.status(500).json({
         error: 'Failed to get available models',
-        message: error instanceof Error ? error.message : 'Unknown error'
+        ...(includeDetails ? { message: error instanceof Error ? error.message : 'Unknown error' } : {})
       });
     }
   }
@@ -117,14 +120,10 @@ export class LLMController {
         max_tokens: max_tokens || 1000,
       };
 
-      // Set up Server-Sent Events
-      res.writeHead(200, {
-        'Content-Type': 'text/event-stream',
-        'Cache-Control': 'no-cache',
-        'Connection': 'keep-alive',
-        'Access-Control-Allow-Origin': '*',
-        'Access-Control-Allow-Headers': 'Cache-Control'
-      });
+      // Set up Server-Sent Events without overriding global CORS headers
+      res.setHeader('Content-Type', 'text/event-stream');
+      res.setHeader('Cache-Control', 'no-cache');
+      res.setHeader('Connection', 'keep-alive');
 
       const stream = await FalService.generateTextStream(request);
       
@@ -145,9 +144,10 @@ export class LLMController {
       });
     } catch (error) {
       console.error('LLM streaming error:', error);
+      const includeDetails = config.server.nodeEnv !== 'production';
       res.status(500).json({
         error: 'Failed to generate streaming text',
-        message: error instanceof Error ? error.message : 'Unknown error'
+        ...(includeDetails ? { message: error instanceof Error ? error.message : 'Unknown error' } : {})
       });
     }
   }

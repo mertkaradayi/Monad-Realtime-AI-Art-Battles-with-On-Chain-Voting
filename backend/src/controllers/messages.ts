@@ -1,5 +1,5 @@
 import { Request, Response } from 'express';
-import { supabaseAdmin } from '../config/config.js';
+import { supabaseAdmin, config } from '../config/config.js';
 import { MessageEnhancementService } from '../services/enhancement.js';
 import { EnhancementRequest } from '../types.js';
 
@@ -36,10 +36,11 @@ export class MessageController {
     } catch (err) {
       const error = err as Error;
       console.error('Error fetching messages:', error);
+      const includeDetails = config.server.nodeEnv !== 'production';
       res.status(500).json({ 
         success: false,
         error: 'Failed to fetch messages',
-        message: error.message 
+        ...(includeDetails ? { message: error.message } : {})
       });
     }
   }
@@ -90,10 +91,11 @@ export class MessageController {
     } catch (err) {
       const error = err as Error;
       console.error('Error creating message:', error);
+      const includeDetails = config.server.nodeEnv !== 'production';
       res.status(500).json({ 
         success: false,
         error: 'Failed to create message',
-        message: error.message 
+        ...(includeDetails ? { message: error.message } : {})
       });
     }
   }
@@ -148,10 +150,11 @@ export class MessageController {
       });
     } catch (error) {
       console.error('Message enhancement error:', error);
+      const includeDetails = config.server.nodeEnv !== 'production';
       res.status(500).json({
         success: false,
         error: 'Failed to enhance message',
-        message: error instanceof Error ? error.message : 'Unknown error'
+        ...(includeDetails ? { message: error instanceof Error ? error.message : 'Unknown error' } : {})
       });
     }
   }
@@ -228,10 +231,11 @@ export class MessageController {
     } catch (err) {
       const error = err as Error;
       console.error('Error creating enhanced message:', error);
+      const includeDetails = config.server.nodeEnv !== 'production';
       res.status(500).json({ 
         success: false,
         error: 'Failed to create message',
-        message: error.message 
+        ...(includeDetails ? { message: error.message } : {})
       });
     }
   }
@@ -290,10 +294,11 @@ export class MessageController {
     } catch (err) {
       const error = err as Error;
       console.error('Error updating message:', error);
+      const includeDetails = config.server.nodeEnv !== 'production';
       res.status(500).json({ 
         success: false,
         error: 'Failed to update message',
-        message: error.message 
+        ...(includeDetails ? { message: error.message } : {})
       });
     }
   }
@@ -341,10 +346,11 @@ export class MessageController {
     } catch (err) {
       const error = err as Error;
       console.error('Error deleting message:', error);
+      const includeDetails = config.server.nodeEnv !== 'production';
       res.status(500).json({ 
         success: false,
         error: 'Failed to delete message',
-        message: error.message 
+        ...(includeDetails ? { message: error.message } : {})
       });
     }
   }
@@ -381,10 +387,11 @@ export class MessageController {
       });
     } catch (error) {
       console.error('Error getting enhancement options:', error);
+      const includeDetails = config.server.nodeEnv !== 'production';
       res.status(500).json({
         success: false,
         error: 'Failed to get enhancement options',
-        message: error instanceof Error ? error.message : 'Unknown error'
+        ...(includeDetails ? { message: error instanceof Error ? error.message : 'Unknown error' } : {})
       });
     }
   }

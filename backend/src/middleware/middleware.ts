@@ -142,11 +142,12 @@ export const errorHandler = (
   
   const statusCode = 500;
   const message = 'Internal Server Error';
+  const includeDetails = config.server.nodeEnv !== 'production';
 
   res.status(statusCode).json({
     success: false,
     error: message,
-    message: error.message
+    ...(includeDetails ? { message: error.message } : {})
   });
 };
 

@@ -46,6 +46,7 @@ export function validateEnvironment(): EnvValidationResult {
   const requiredVars = [
     { key: 'SUPABASE_URL', value: env.SUPABASE_URL, name: 'Supabase URL' },
     { key: 'SUPABASE_ANON_KEY', value: env.SUPABASE_ANON_KEY, name: 'Supabase Anonymous Key' },
+    { key: 'SUPABASE_SERVICE_ROLE_KEY', value: env.SUPABASE_SERVICE_ROLE_KEY, name: 'Supabase Service Role Key' },
     { key: 'PRIVY_APP_ID', value: env.PRIVY_APP_ID, name: 'Privy App ID' },
     { key: 'PRIVY_APP_SECRET', value: env.PRIVY_APP_SECRET, name: 'Privy App Secret' },
     { key: 'FAL_KEY', value: env.FAL_KEY, name: 'Fal.ai API Key' },
@@ -79,10 +80,7 @@ export function validateEnvironment(): EnvValidationResult {
     errors.push(`Invalid NODE_ENV: ${env.NODE_ENV}. Must be one of: ${validEnvs.join(', ')}`);
   }
 
-  // Warnings for optional but recommended variables
-  if (!env.SUPABASE_SERVICE_ROLE_KEY) {
-    warnings.push('SUPABASE_SERVICE_ROLE_KEY not provided, using anon key for admin operations');
-  }
+  // No optional warnings for service role key; it is required now
 
   // Environment-specific warnings
   if (env.NODE_ENV === 'production') {
