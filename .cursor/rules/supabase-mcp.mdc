@@ -1,4 +1,13 @@
+---
+description: Database management rules - Supabase MCP tools only
+globs: ["backend/**/*", "src/**/*"]
+alwaysApply: true
+---
+
 # Supabase MCP Database Management Rules
+
+## 📋 **DESCRIPTION:**
+This rule enforces the exclusive use of Supabase MCP (Model Context Protocol) tools for all database operations in the Battle Semantic project. The Supabase MCP server provides AI assistants with standardized tools for database management, schema changes, migrations, and project operations, ensuring consistency and preventing manual database modifications.
 
 ## 🎯 **MANDATORY: Supabase MCP Only for Database Operations**
 
@@ -7,6 +16,7 @@
 - **NO manual SQL file editing** for schema changes
 - **NO direct database modifications** outside of MCP
 - **MCP is the single source of truth** for database schema
+- **AI assistants MUST use MCP tools** for all database interactions
 
 ### **Required MCP Tools Usage:**
 
@@ -23,25 +33,53 @@ import { mcp_supabase_execute_sql } from '@/lib/supabase-mcp'
 ```
 
 ### **Available MCP Database Operations:**
-- `mcp_supabase_list_tables` - Read current schema
-- `mcp_supabase_apply_migration` - Apply schema changes
-- `mcp_supabase_execute_sql` - Execute custom queries
-- `mcp_supabase_get_project` - Get project details
-- `mcp_supabase_generate_typescript_types` - Generate TypeScript types
+
+#### **Core Database Tools:**
+- `mcp_supabase_list_tables` - Lists all tables within specified schemas
+- `mcp_supabase_list_extensions` - Lists all extensions in the database
+- `mcp_supabase_list_migrations` - Lists all migrations in the database
+- `mcp_supabase_apply_migration` - Applies SQL migrations to the database (DDL operations)
+- `mcp_supabase_execute_sql` - Executes raw SQL for regular queries (SELECT/INSERT/UPDATE/DELETE)
+
+#### **Project Management Tools:**
+- `mcp_supabase_list_projects` - Lists all Supabase projects for the user
+- `mcp_supabase_get_project` - Gets details for a specific project
+- `mcp_supabase_get_project_url` - Gets the API URL for a project
+- `mcp_supabase_get_anon_key` - Gets the anonymous API key for a project
+- `mcp_supabase_generate_typescript_types` - Generates TypeScript types from schema
+
+#### **Branch Management Tools (Experimental):**
+- `mcp_supabase_create_branch` - Creates a development branch with migrations
+- `mcp_supabase_list_branches` - Lists all development branches
+- `mcp_supabase_delete_branch` - Deletes a development branch
+- `mcp_supabase_merge_branch` - Merges migrations from development to production
+- `mcp_supabase_reset_branch` - Resets branch to a specific migration version
+- `mcp_supabase_rebase_branch` - Rebases branch to handle migration drift
+
+#### **Debug & Monitoring Tools:**
+- `mcp_supabase_get_logs` - Gets logs for project services (api, postgres, auth, etc.)
+- `mcp_supabase_get_advisors` - Gets security and performance advisory notices
+
+#### **Documentation Tools:**
+- `mcp_supabase_search_docs` - Searches Supabase documentation for up-to-date information
 
 ### **Database Workflow Rules:**
-- **Schema Changes**: Use `mcp_supabase_apply_migration` for all DDL operations
-- **Data Queries**: Use `mcp_supabase_execute_sql` for SELECT/INSERT/UPDATE/DELETE
+- **Schema Changes**: Use `mcp_supabase_apply_migration` for all DDL operations (CREATE, ALTER, DROP)
+- **Data Queries**: Use `mcp_supabase_execute_sql` for SELECT/INSERT/UPDATE/DELETE operations
 - **Schema Reading**: Use `mcp_supabase_list_tables` to understand current structure
 - **Type Generation**: Use `mcp_supabase_generate_typescript_types` for TypeScript types
+- **Migration Management**: Use `mcp_supabase_list_migrations` to track applied changes
+- **Branch Operations**: Use branch tools for development workflow (create, merge, reset, rebase)
+- **Debugging**: Use `mcp_supabase_get_logs` and `mcp_supabase_get_advisors` for troubleshooting
 
 ### **AI Command Patterns:**
-When user requests database changes, AI must:
+When user requests database changes, AI must follow this workflow:
 
 1. **Read Current Schema:**
    ```typescript
    // Always start by reading current state
    const currentTables = await mcp_supabase_list_tables(project_id)
+   const currentMigrations = await mcp_supabase_list_migrations(project_id)
    ```
 
 2. **Apply Changes via Migration:**
@@ -54,10 +92,18 @@ When user requests database changes, AI must:
    })
    ```
 
-3. **Update Documentation:**
+3. **Update Documentation & Types:**
    ```typescript
    // Update schema.md file after changes
    // Generate new TypeScript types
+   await mcp_supabase_generate_typescript_types(project_id)
+   ```
+
+4. **Verify Changes:**
+   ```typescript
+   // Confirm changes were applied correctly
+   const updatedTables = await mcp_supabase_list_tables(project_id)
+   const updatedMigrations = await mcp_supabase_list_migrations(project_id)
    ```
 
 ### **File Management Rules:**
@@ -173,9 +219,85 @@ export interface Message {
 - **REQUIRE** TypeScript type generation after schema changes
 
 ## 📋 **AI Command Examples:**
+
+### **Schema Operations:**
 - "Show me the current messages table schema"
 - "Add a 'status' column to messages with ENUM('pending', 'processed', 'failed')"
 - "Create an index on the 'author' column for better performance"
 - "Add a foreign key relationship between messages and users tables"
 - "Generate TypeScript types for the current schema"
 - "Update the schema documentation"
+
+### **Migration Management:**
+- "List all applied migrations"
+- "Reset the development branch to the last migration"
+- "Rebase the development branch with production changes"
+- "Merge development branch to production"
+
+### **Project Operations:**
+- "List all my Supabase projects"
+- "Get the project URL and API key"
+- "Create a new development branch"
+- "Delete the current development branch"
+
+### **Debugging & Monitoring:**
+- "Show me the recent API logs"
+- "Check for security advisories"
+- "Get performance recommendations"
+- "Look up the exact error from the last migration"
+
+### **Documentation:**
+- "Search Supabase docs for authentication setup"
+- "Find documentation for real-time subscriptions"
+
+## 🔧 **MCP Server Configuration:**
+
+### **Basic Setup:**
+```bash
+# Install and run Supabase MCP server
+npx -y @supabase/mcp-server-supabase@latest
+```
+
+### **Project-Scoped Mode:**
+```bash
+# Limit access to specific project
+npx -y @supabase/mcp-server-supabase@latest --project-ref=<project-ref>
+```
+
+### **Read-Only Mode (Recommended):**
+```bash
+# Restrict to read-only operations for security
+npx -y @supabase/mcp-server-supabase@latest --read-only
+```
+
+### **Feature Groups:**
+```bash
+# Enable specific tool groups only
+npx -y @supabase/mcp-server-supabase@latest --features=database,docs
+```
+
+### **Environment Variables:**
+```bash
+# Required for authentication
+export SUPABASE_ACCESS_TOKEN="<personal-access-token>"
+```
+
+### **MCP Client Configuration:**
+```json
+{
+  "mcpServers": {
+    "supabase": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "@supabase/mcp-server-supabase@latest",
+        "--read-only",
+        "--project-ref=<project-ref>"
+      ],
+      "env": {
+        "SUPABASE_ACCESS_TOKEN": "<personal-access-token>"
+      }
+    }
+  }
+}
+```
