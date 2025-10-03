@@ -174,6 +174,24 @@ export class BattleController {
         .select()
         .single();
 
+      // If participant1 update failed, check if user is already participant1
+      if (updateError || !updatedBattle) {
+        const { data: currentBattle } = await supabaseAdmin
+          .from('battles')
+          .select('*')
+          .eq('id', id)
+          .single();
+        
+        if (currentBattle?.participant1_wallet === walletAddress) {
+          // User is already participant1, return success
+          res.json({ 
+            success: true,
+            data: currentBattle
+          });
+          return;
+        }
+      }
+
       // If participant1 slot is taken, try participant2 slot
       if (updateError || !updatedBattle) {
         const { data: battle, error: fetchError } = await supabaseAdmin
@@ -233,6 +251,23 @@ export class BattleController {
           .single();
 
         if (result.error || !result.data) {
+          // If the atomic update failed, it means another user took the slot
+          // Let's fetch the current battle state to provide better error message
+          const { data: currentBattle } = await supabaseAdmin
+            .from('battles')
+            .select('*')
+            .eq('id', id)
+            .single();
+          
+          if (currentBattle?.participant1_wallet === walletAddress || currentBattle?.participant2_wallet === walletAddress) {
+            // User is already a participant, return success
+            res.json({ 
+              success: true,
+              data: currentBattle
+            });
+            return;
+          }
+          
           res.status(400).json({
             success: false,
             error: 'Failed to join battle - slot may have been taken by another user'

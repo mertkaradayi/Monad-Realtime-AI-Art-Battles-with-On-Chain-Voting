@@ -32,7 +32,6 @@ export default function JoinBattlePage() {
   const [isLoading, setIsLoading] = useState(false)
   const [isJoining, setIsJoining] = useState(false)
   const [error, setError] = useState<string | null>(null)
-  const [autoJoining, setAutoJoining] = useState(false)
   const [pollingInterval, setPollingInterval] = useState<NodeJS.Timeout | null>(null)
 
   // Fetch battle details and auto-join if possible
@@ -57,20 +56,14 @@ export default function JoinBattlePage() {
            battle.participant2_wallet === user.wallet.address
   }
 
-  // Auto-join battle when user is authenticated and battle is loaded
+  // Show join notification when user can join
   useEffect(() => {
-    if (battle && authenticated && user?.wallet?.address && canJoin() && !isJoining && !autoJoining) {
-      setAutoJoining(true)
-      toast.info('Automatically joining battle...', {
-        description: 'You will become a participant'
+    if (battle && authenticated && user?.wallet?.address && canJoin() && !isJoining && !isParticipant()) {
+      // Show a toast notification that user can join
+      toast.info('You can join this battle!', {
+        description: 'Click the join button below to become a participant',
+        duration: 5000
       })
-      
-      // Small delay to ensure UI is ready
-      const timer = setTimeout(() => {
-        handleJoinBattle()
-      }, 1000)
-      
-      return () => clearTimeout(timer)
     }
   }, [battle, authenticated, user?.wallet?.address])
 
@@ -149,10 +142,28 @@ export default function JoinBattlePage() {
       const result = await api.joinBattle(battleId)
       
       if (result.success) {
+        // Update battle state immediately
         setBattle(result.data)
-        toast.success('Successfully joined the battle!', {
-          description: 'You are now a participant'
-        })
+        
+        // Show success message based on participant role
+        const isParticipant1 = result.data.participant1_wallet === user?.wallet?.address
+        const isParticipant2 = result.data.participant2_wallet === user?.wallet?.address
+        
+        if (isParticipant1) {
+          toast.success('🎯 You are Participant 1!', {
+            description: 'Waiting for Participant 2 to join...',
+            duration: 4000
+          })
+        } else if (isParticipant2) {
+          toast.success('🎯 You are Participant 2!', {
+            description: 'Battle is now active! Both participants have joined.',
+            duration: 4000
+          })
+        } else {
+          toast.success('Successfully joined the battle!', {
+            description: 'You are now a participant'
+          })
+        }
       } else {
         setError(result.error || 'Failed to join battle')
         toast.error('Failed to join battle')
@@ -228,16 +239,6 @@ export default function JoinBattlePage() {
             <CardContent className="text-center py-12">
               <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
               <p className="text-muted-foreground">Loading battle details...</p>
-            </CardContent>
-          </Card>
-        ) : autoJoining ? (
-          <Card className="max-w-2xl mx-auto">
-            <CardContent className="text-center py-12">
-              <div className="space-y-4">
-                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto"></div>
-                <h2 className="text-2xl font-semibold">Joining Battle...</h2>
-                <p className="text-muted-foreground">You will automatically become a participant</p>
-              </div>
             </CardContent>
           </Card>
         ) : battle ? (
