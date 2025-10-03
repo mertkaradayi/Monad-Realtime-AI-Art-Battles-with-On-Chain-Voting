@@ -16,7 +16,14 @@
 
 ### Security
 - **Row Level Security (RLS)**: Enabled on messages table
-- **Policy**: "Allow all operations on messages" (FOR ALL USING (true) WITH CHECK (true))
+- **Policies**: 
+  - "Service role can manage messages" - Backend service role can perform all operations (bypasses RLS)
+  - "Users can view own messages" - Authenticated users can only SELECT messages where author matches their user ID
+  - "Users can insert own messages" - Authenticated users can only INSERT messages with their own user ID as author
+  - "Users can update own messages" - Authenticated users can only UPDATE their own messages
+  - "Users can delete own messages" - Authenticated users can only DELETE their own messages
+- **Backend Authentication**: Uses Privy for user authentication and service role for database operations
+- **User Isolation**: Backend filters all operations by wallet address extracted from Privy authentication
 
 ### Triggers
 - **update_messages_updated_at**: Automatically updates `updated_at` timestamp on row updates
@@ -32,6 +39,17 @@
 - Added `original_content` column for storing original message content before enhancement
 - Added `enhancement_data` column for storing JSON data with enhancement details
 - Both columns are nullable to maintain backward compatibility
+
+### 2024-12-01 - Security Improvements
+- Replaced overly permissive RLS policy with proper ownership-based policies
+- Users can now only access their own messages (based on wallet address)
+- Added separate policies for SELECT, INSERT, UPDATE, and DELETE operations
+
+### 2024-12-01 - Backend Integration Fix
+- Updated RLS policies to work with backend service role authentication
+- Backend now uses `supabaseAdmin` client with service role key to bypass RLS
+- User isolation maintained through backend filtering by wallet address
+- Fixed "new row violates row-level security policy" error
 
 ## Notes
 - This schema is managed via Supabase MCP tools

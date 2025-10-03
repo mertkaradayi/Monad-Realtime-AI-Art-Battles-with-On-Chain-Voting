@@ -10,16 +10,18 @@ import { LoginPage } from '@/components/LoginPage'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { Toaster } from '@/components/ui/sonner'
 import { toast } from 'sonner'
 import { api } from '@/lib/api'
 
 export default function Home() {
-  const { ready, authenticated, user } = usePrivy()
+  const { ready, authenticated } = usePrivy()
   const [messages, setMessages] = useState<Message[]>([])
   const [editingMessage, setEditingMessage] = useState<Message | null>(null)
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [messageToDelete, setMessageToDelete] = useState<Message | null>(null)
 
   // Fetch messages from the backend
   const fetchMessages = async () => {
@@ -119,18 +121,19 @@ export default function Home() {
   }
 
   // Delete a message
-  const handleDeleteMessage = async (id: string) => {
-    if (!confirm('Are you sure you want to delete this message?')) {
+  const handleDeleteMessage = async () => {
+    if (!messageToDelete) {
       return
     }
 
     try {
       setIsLoading(true)
       setError(null)
-      const result = await api.deleteMessage(id)
+      const result = await api.deleteMessage(messageToDelete.id)
       
       if (result.success) {
-        setMessages(messages.filter(msg => msg.id !== id))
+        setMessages(prev => prev.filter(msg => msg.id !== messageToDelete.id))
+        setMessageToDelete(null)
         toast.success('Message deleted successfully!')
       } else {
         setError(result.error || 'Failed to delete message')
@@ -147,6 +150,16 @@ export default function Home() {
       }
     } finally {
       setIsLoading(false)
+    }
+  }
+
+  const requestDeleteMessage = (message: Message) => {
+    setMessageToDelete(message)
+  }
+
+  const closeDeleteDialog = () => {
+    if (!isLoading) {
+      setMessageToDelete(null)
     }
   }
 
@@ -235,7 +248,7 @@ export default function Home() {
             
             <MessagesList
               messages={messages}
-              onDelete={handleDeleteMessage}
+              onDelete={requestDeleteMessage}
               onEdit={setEditingMessage}
             />
           </div>
@@ -260,6 +273,34 @@ export default function Home() {
         
         <Toaster />
       </div>
+
+      <Dialog open={!!messageToDelete} onOpenChange={(open) => {
+        if (!open) {
+          closeDeleteDialog()
+        }
+      }}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Delete message</DialogTitle>
+            <DialogDescription>
+              This action cannot be undone. The selected message will be permanently removed.
+            </DialogDescription>
+          </DialogHeader>
+          {messageToDelete && (
+            <p className="text-sm text-muted-foreground">
+              &ldquo;{messageToDelete.content}&rdquo;
+            </p>
+          )}
+          <DialogFooter>
+            <Button variant="outline" onClick={closeDeleteDialog} disabled={isLoading}>
+              Cancel
+            </Button>
+            <Button variant="destructive" onClick={handleDeleteMessage} disabled={isLoading}>
+              {isLoading ? 'Deleting...' : 'Delete'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }

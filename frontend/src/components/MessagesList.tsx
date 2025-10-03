@@ -1,6 +1,5 @@
 'use client'
 
-import { useState, useEffect } from 'react'
 import { Message } from '@/lib/supabase'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -8,7 +7,7 @@ import { Badge } from '@/components/ui/badge'
 
 interface MessagesListProps {
   messages: Message[]
-  onDelete: (id: string) => void
+  onDelete: (message: Message) => void
   onEdit: (message: Message) => void
 }
 
@@ -56,7 +55,7 @@ export function MessagesList({ messages, onDelete, onEdit }: MessagesListProps) 
                 <Button
                   variant="destructive"
                   size="sm"
-                  onClick={() => onDelete(message.id)}
+                  onClick={() => onDelete(message)}
                 >
                   Delete
                 </Button>

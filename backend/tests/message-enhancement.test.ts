@@ -15,7 +15,7 @@ fal.config({
 });
 
 // Import service after configuring fal.ai
-import { MessageEnhancementService } from '../src/services/messageEnhancementService.js';
+import { MessageEnhancementService } from '../src/services/enhancement.js';
 
 interface TestMessage {
   message: string;

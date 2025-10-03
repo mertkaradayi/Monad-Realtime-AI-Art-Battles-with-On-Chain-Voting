@@ -98,6 +98,9 @@ NODE_ENV=development
 ```env
 # Privy Configuration
 NEXT_PUBLIC_PRIVY_APP_ID=your_privy_app_id_here
+
+# API Configuration
+NEXT_PUBLIC_API_BASE_URL=http://localhost:3001
 ```
 
 > **Note**: See the [complete setup guide](./docs/PROJECT_SETUP.md) for detailed configuration instructions.

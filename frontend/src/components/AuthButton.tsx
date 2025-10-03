@@ -2,7 +2,7 @@
 
 import { usePrivy, useLogin, useLogout } from '@privy-io/react-auth';
 import { Button } from '@/components/ui/button';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Separator } from '@/components/ui/separator';
 import { LogIn, LogOut, User, Wallet } from 'lucide-react';

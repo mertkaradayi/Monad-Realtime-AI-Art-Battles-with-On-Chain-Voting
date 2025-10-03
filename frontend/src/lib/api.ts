@@ -1,6 +1,18 @@
 import { getAccessToken } from '@privy-io/react-auth';
 
-const API_BASE_URL = 'http://localhost:3001';
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:3001';
+
+const buildUrl = (path: string) => {
+  if (API_BASE_URL) {
+    return `${API_BASE_URL}${path}`;
+  }
+
+  if (typeof window !== 'undefined') {
+    return `${window.location.origin}${path}`;
+  }
+
+  return path;
+};
 
 // Helper function to get authenticated headers
 export const getAuthHeaders = async () => {
@@ -21,7 +33,7 @@ export const api = {
   // Get all messages
   async getMessages() {
     const headers = await getAuthHeaders();
-    const response = await fetch(`${API_BASE_URL}/api/messages`, {
+    const response = await fetch(buildUrl('/api/messages'), {
       method: 'GET',
       headers,
     });
@@ -36,7 +48,7 @@ export const api = {
   // Create a new message
   async createMessage(content: string) {
     const headers = await getAuthHeaders();
-    const response = await fetch(`${API_BASE_URL}/api/messages`, {
+    const response = await fetch(buildUrl('/api/messages'), {
       method: 'POST',
       headers,
       body: JSON.stringify({ content }),
@@ -52,7 +64,7 @@ export const api = {
   // Create an enhanced message (automatically enhances the content)
   async createEnhancedMessage(content: string, enhancementType: string = 'clarity', targetAudience: string = 'general') {
     const headers = await getAuthHeaders();
-    const response = await fetch(`${API_BASE_URL}/api/messages/enhanced`, {
+    const response = await fetch(buildUrl('/api/messages/enhanced'), {
       method: 'POST',
       headers,
       body: JSON.stringify({ 
@@ -73,7 +85,7 @@ export const api = {
   // Enhance a message without saving
   async enhanceMessage(content: string, enhancementType: string = 'clarity', targetAudience: string = 'general') {
     const headers = await getAuthHeaders();
-    const response = await fetch(`${API_BASE_URL}/api/messages/enhance`, {
+    const response = await fetch(buildUrl('/api/messages/enhance'), {
       method: 'POST',
       headers,
       body: JSON.stringify({ 
@@ -93,7 +105,7 @@ export const api = {
   // Get enhancement options
   async getEnhancementOptions() {
     const headers = await getAuthHeaders();
-    const response = await fetch(`${API_BASE_URL}/api/messages/enhancement-options`, {
+    const response = await fetch(buildUrl('/api/messages/enhancement-options'), {
       method: 'GET',
       headers,
     });
@@ -108,7 +120,7 @@ export const api = {
   // Update a message
   async updateMessage(id: string, content: string) {
     const headers = await getAuthHeaders();
-    const response = await fetch(`${API_BASE_URL}/api/messages/${id}`, {
+    const response = await fetch(buildUrl(`/api/messages/${id}`), {
       method: 'PUT',
       headers,
       body: JSON.stringify({ content }),
@@ -124,7 +136,7 @@ export const api = {
   // Delete a message
   async deleteMessage(id: string) {
     const headers = await getAuthHeaders();
-    const response = await fetch(`${API_BASE_URL}/api/messages/${id}`, {
+    const response = await fetch(buildUrl(`/api/messages/${id}`), {
       method: 'DELETE',
       headers,
     });

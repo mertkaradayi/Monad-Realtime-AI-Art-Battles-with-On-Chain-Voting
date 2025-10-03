@@ -1,5 +1,5 @@
 import { Request, Response } from 'express';
-import { supabase } from '../config/config.js';
+import { supabaseAdmin } from '../config/config.js';
 import { MessageEnhancementService } from '../services/enhancement.js';
 import { EnhancementRequest } from '../types.js';
 
@@ -9,9 +9,20 @@ export class MessageController {
    */
   static async getMessages(req: Request, res: Response): Promise<void> {
     try {
-      const { data, error } = await supabase
+      const walletAddress = req.user?.wallet?.address;
+
+      if (!walletAddress) {
+        res.status(403).json({
+          success: false,
+          error: 'Wallet required',
+        });
+        return;
+      }
+
+      const { data, error } = await supabaseAdmin
         .from('messages')
         .select('*')
+        .eq('author', walletAddress)
         .order('created_at', { ascending: false });
       
       if (error) {
@@ -38,8 +49,9 @@ export class MessageController {
    */
   static async createMessage(req: Request, res: Response): Promise<void> {
     try {
-      const { content, author } = req.body;
-      
+      const { content } = req.body;
+      const walletAddress = req.user?.wallet?.address;
+
       if (!content) {
         res.status(400).json({
           success: false,
@@ -47,13 +59,21 @@ export class MessageController {
         });
         return;
       }
-      
-      const { data, error } = await supabase
+
+      if (!walletAddress) {
+        res.status(403).json({
+          success: false,
+          error: 'Wallet required'
+        });
+        return;
+      }
+
+      const { data, error } = await supabaseAdmin
         .from('messages')
         .insert([
           { 
             content: content.trim(),
-            author: req.user?.wallet?.address || 'Anonymous'
+            author: walletAddress
           }
         ])
         .select()
@@ -141,12 +161,21 @@ export class MessageController {
    */
   static async createEnhancedMessage(req: Request, res: Response): Promise<void> {
     try {
-      const { content, author, enhancementType, targetAudience, autoEnhance } = req.body;
+      const { content, enhancementType, targetAudience, autoEnhance } = req.body;
+      const walletAddress = req.user?.wallet?.address;
       
       if (!content) {
         res.status(400).json({
           success: false,
           error: 'Content is required'
+        });
+        return;
+      }
+
+      if (!walletAddress) {
+        res.status(403).json({
+          success: false,
+          error: 'Wallet required'
         });
         return;
       }
@@ -172,12 +201,12 @@ export class MessageController {
         }
       }
       
-      const { data, error } = await supabase
+      const { data, error } = await supabaseAdmin
         .from('messages')
         .insert([
           { 
             content: finalContent,
-            author: req.user?.wallet?.address || 'Anonymous',
+            author: walletAddress,
             original_content: autoEnhance ? content.trim() : null,
             enhancement_data: enhancementData ? JSON.stringify(enhancementData) : null
           }
@@ -213,7 +242,8 @@ export class MessageController {
   static async updateMessage(req: Request, res: Response): Promise<void> {
     try {
       const { id } = req.params;
-      const { content, author } = req.body;
+      const { content } = req.body;
+      const walletAddress = req.user?.wallet?.address;
       
       if (!content) {
         res.status(400).json({
@@ -223,13 +253,21 @@ export class MessageController {
         return;
       }
       
-      const { data, error } = await supabase
+      if (!walletAddress) {
+        res.status(403).json({
+          success: false,
+          error: 'Wallet required'
+        });
+        return;
+      }
+
+      const { data, error } = await supabaseAdmin
         .from('messages')
         .update({ 
-          content: content.trim(),
-          author: req.user?.wallet?.address || 'Anonymous'
+          content: content.trim()
         })
         .eq('id', id)
+        .eq('author', walletAddress)
         .select()
         .single();
       
@@ -266,11 +304,21 @@ export class MessageController {
   static async deleteMessage(req: Request, res: Response): Promise<void> {
     try {
       const { id } = req.params;
-      
-      const { data, error } = await supabase
+      const walletAddress = req.user?.wallet?.address;
+
+      if (!walletAddress) {
+        res.status(403).json({
+          success: false,
+          error: 'Wallet required'
+        });
+        return;
+      }
+
+      const { data, error } = await supabaseAdmin
         .from('messages')
         .delete()
         .eq('id', id)
+        .eq('author', walletAddress)
         .select()
         .single();
       

@@ -52,11 +52,16 @@ export const auth = async (req: Request, res: Response, next: NextFunction) => {
 
     const user = await privy.getUser(verifiedClaims.userId);
     
+    // Find the first wallet account from linkedAccounts
+    const walletAccount = user.linkedAccounts?.find(
+      (account: any) => account.type === 'wallet' && account.address
+    ) as any;
+    
     req.user = {
       id: verifiedClaims.userId,
-      wallet: user.wallet ? {
-        address: user.wallet.address,
-        chainType: user.wallet.chainType || 'ethereum'
+      wallet: walletAccount ? {
+        address: walletAccount.address,
+        chainType: walletAccount.chainType || 'ethereum'
       } : undefined
     };
 

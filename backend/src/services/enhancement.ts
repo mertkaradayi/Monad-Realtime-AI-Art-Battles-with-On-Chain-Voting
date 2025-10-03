@@ -1,5 +1,5 @@
-import { FalService, LLMRequest } from './fal.js';
-import { EnhancementRequest, EnhancementResponse } from '../types.js';
+import { FalService } from './fal.js';
+import { EnhancementRequest, EnhancementResponse, LLMRequest } from '../types.js';
 
 export class MessageEnhancementService {
   /**
