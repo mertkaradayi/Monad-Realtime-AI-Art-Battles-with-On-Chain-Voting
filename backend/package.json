@@ -8,7 +8,11 @@
     "build": "tsc",
     "start": "node dist/index.js",
     "dev": "tsx watch src/index.ts",
-    "type-check": "tsc --noEmit"
+    "type-check": "tsc --noEmit",
+    "test": "tsx tests/run-tests.ts",
+    "test:fal": "tsx tests/fal-ai.test.ts",
+    "test:message": "tsx tests/message-enhancement.test.ts",
+    "test:demo": "tsx tests/message-demo.test.ts"
   },
   "dependencies": {
     "@fal-ai/client": "^1.6.2",

@@ -1,16 +1,36 @@
 /**
  * Test script for message enhancement functionality
- * Run with: node test-message-enhancement.js
- * Make sure to set FAL_KEY environment variable first
+ * Run with: npm run test:message
  */
 
-import { MessageEnhancementService } from './dist/services/messageEnhancementService.js';
+import { fal } from '@fal-ai/client';
 import dotenv from 'dotenv';
 
 // Load environment variables
 dotenv.config();
 
-async function testMessageEnhancement() {
+// Configure fal.ai client
+fal.config({
+  credentials: process.env.FAL_KEY || '',
+});
+
+// Import service after configuring fal.ai
+import { MessageEnhancementService } from '../src/services/messageEnhancementService.js';
+
+interface TestMessage {
+  message: string;
+  type: 'grammar' | 'clarity' | 'professional' | 'creative' | 'concise';
+  audience: 'general' | 'professional' | 'academic' | 'casual';
+}
+
+interface TestResult {
+  success: boolean;
+  test: TestMessage;
+  result?: any;
+  error?: string;
+}
+
+async function testMessageEnhancement(): Promise<void> {
   console.log('🧪 Testing Message Enhancement Service...\n');
 
   // Check if FAL_KEY is set
@@ -23,7 +43,7 @@ async function testMessageEnhancement() {
 
   console.log('✅ FAL_KEY is configured\n');
 
-  const testMessages = [
+  const testMessages: TestMessage[] = [
     {
       message: "hey can u help me with this thing its really confusing and i dont know what to do",
       type: 'grammar',
@@ -46,21 +66,40 @@ async function testMessageEnhancement() {
     }
   ];
 
+  const results: TestResult[] = [];
+
   try {
     for (let i = 0; i < testMessages.length; i++) {
       const test = testMessages[i];
       console.log(`📝 Test ${i + 1}: ${test.type} enhancement for ${test.audience} audience`);
       console.log(`Original: "${test.message}"`);
       
-      const result = await MessageEnhancementService.enhanceMessage({
-        originalMessage: test.message,
-        enhancementType: test.type,
-        targetAudience: test.audience
-      });
+      try {
+        const result = await MessageEnhancementService.enhanceMessage({
+          originalMessage: test.message,
+          enhancementType: test.type,
+          targetAudience: test.audience
+        });
 
-      console.log(`Enhanced: "${result.enhancedMessage}"`);
-      console.log(`Improvements: ${result.improvements.join(', ')}`);
-      console.log(`Confidence: ${result.confidence}%`);
+        console.log(`Enhanced: "${result.enhancedMessage}"`);
+        console.log(`Improvements: ${result.improvements.join(', ')}`);
+        console.log(`Confidence: ${result.confidence}%`);
+        
+        results.push({
+          success: true,
+          test,
+          result
+        });
+
+      } catch (error: any) {
+        console.log(`❌ Test ${i + 1} failed:`, error.message);
+        results.push({
+          success: false,
+          test,
+          error: error.message
+        });
+      }
+      
       console.log('---\n');
     }
 
@@ -73,22 +112,34 @@ async function testMessageEnhancement() {
     const audiences = MessageEnhancementService.getTargetAudiences();
     audiences.forEach(audience => console.log(`  - ${audience}`));
 
-    console.log('\n🎉 Message enhancement testing completed successfully!');
-
-  } catch (error) {
-    console.error('❌ Error testing message enhancement:');
-    console.error(error.message);
+    // Summary
+    const successful = results.filter(r => r.success).length;
+    const failed = results.filter(r => !r.success).length;
     
-    if (error.message.includes('401') || error.message.includes('unauthorized')) {
+    console.log('\n📊 Test Summary:');
+    console.log(`✅ Successful: ${successful}`);
+    console.log(`❌ Failed: ${failed}`);
+
+    if (successful > 0) {
+      console.log('\n🎉 Message enhancement testing completed successfully!');
+    } else {
       console.log('\n💡 This might be an authentication issue. Please check:');
       console.log('1. Your FAL_KEY is correct');
       console.log('2. You have credits available in your fal.ai account');
       console.log('3. Your API key has the necessary permissions');
+      process.exit(1);
     }
-    
+
+  } catch (error: any) {
+    console.error('❌ Error testing message enhancement:');
+    console.error(error.message);
     process.exit(1);
   }
 }
 
 // Run the test
-testMessageEnhancement();
+if (import.meta.url === `file://${process.argv[1]}`) {
+  testMessageEnhancement().catch(console.error);
+}
+
+export { testMessageEnhancement };
