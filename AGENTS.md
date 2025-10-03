@@ -1,5 +1,20 @@
 # Project Instructions
 
+## 🎨 **PROJECT TRANSFORMATION**
+- **CURRENT PROJECT**: Battle Semantic (message enhancement)
+- **TARGET PROJECT**: Realtime AI Art Battles
+- **TRANSFORMATION**: Feature-by-feature following IMPLEMENTATION_TODO.md
+- **TESTING**: Manual testing after each feature implementation
+- **REFERENCE**: See IMPLEMENTATION_TODO.md for detailed feature list
+
+## 🎯 **IMPLEMENTATION STRATEGY**
+- **SEQUENTIAL**: Implement features 1-11 in order
+- **TESTING**: Test each feature before moving to next
+- **DATABASE**: Transform messages → battles, prompts, images, votes, nfts
+- **AI**: Text enhancement → Image generation
+- **FEATURES**: Real-time voting, NFT minting, QR code sharing
+- **BLOCKCHAIN**: Monad integration for voting and NFT minting
+
 ## 📋 **Rule Files Reference**
 This project uses structured rule files located in `.cursor/rules/` folder:
 
@@ -76,3 +91,9 @@ This project uses structured rule files located in `.cursor/rules/` folder:
 - **DATABASE**: Always use Supabase MCP tools for schema changes
 - **SCHEMA**: Never suggest manual SQL file editing or direct database modifications
 - **TYPES**: Auto-generate TypeScript types after any schema changes
+
+## 🎯 **CURRENT STATUS**
+- **NEXT FEATURE**: Feature 1 - Battle Creation & QR Code
+- **IMPLEMENTATION**: Follow IMPLEMENTATION_TODO.md sequentially
+- **TESTING**: Manual testing required after each feature
+- **TRANSFORMATION**: From message enhancement to AI art battles
