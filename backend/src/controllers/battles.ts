@@ -51,7 +51,8 @@ export class BattleController {
         .select()
         .single();
       
-      if (updateError) {
+      // Only throw if we still don't have an updated battle
+      if (updateError && !updatedBattle) {
         throw updateError;
       }
       

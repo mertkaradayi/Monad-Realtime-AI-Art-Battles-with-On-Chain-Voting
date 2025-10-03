@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useParams } from 'next/navigation'
 import { usePrivy } from '@privy-io/react-auth'
 import { AuthButton } from '@/components/AuthButton'
@@ -32,7 +32,9 @@ export default function JoinBattlePage() {
   const [isLoading, setIsLoading] = useState(false)
   const [isJoining, setIsJoining] = useState(false)
   const [error, setError] = useState<string | null>(null)
-  const [pollingInterval, setPollingInterval] = useState<NodeJS.Timeout | null>(null)
+  const pollingRef = useRef<NodeJS.Timeout | null>(null)
+  const [isPolling, setIsPolling] = useState(false)
+  const autoJoinAttemptedRef = useRef<string | null>(null)
 
   // Fetch battle details and auto-join if possible
   useEffect(() => {
@@ -56,66 +58,84 @@ export default function JoinBattlePage() {
            battle.participant2_wallet === user.wallet.address
   }
 
-  // Show join notification when user can join
+  // Auto-join when authenticated, battle loaded, and eligible
   useEffect(() => {
-    if (battle && authenticated && user?.wallet?.address && canJoin() && !isJoining && !isParticipant()) {
-      // Show a toast notification that user can join
-      toast.info('You can join this battle!', {
-        description: 'Click the join button below to become a participant',
-        duration: 5000
-      })
-    }
-  }, [battle, authenticated, user?.wallet?.address])
+    if (!battle || !authenticated || !user?.wallet?.address) return
+    if (!canJoin() || isParticipant() || isJoining) return
+
+    const key = `${battle.id}:${user.wallet.address}`
+    if (autoJoinAttemptedRef.current === key) return
+    autoJoinAttemptedRef.current = key
+
+    handleJoinBattle()
+  }, [battle?.id, battle?.status, battle?.participant1_wallet, battle?.participant2_wallet, authenticated, user?.wallet?.address, isJoining])
 
   // Poll for battle updates when battle is in waiting state
   useEffect(() => {
-    if (battle && battle.status === 'waiting' && isParticipant()) {
-      // Start polling every 3 seconds to check for second participant
-      const interval = setInterval(() => {
-        fetchBattle()
+    const shouldPoll = Boolean(battle && battle.status === 'waiting' && isParticipant())
+
+    if (shouldPoll && !pollingRef.current) {
+      pollingRef.current = setInterval(() => {
+        fetchBattle(true)
       }, 3000)
-      
-      setPollingInterval(interval)
-      
-      return () => {
-        clearInterval(interval)
-        setPollingInterval(null)
+      setIsPolling(true)
+    }
+
+    if (!shouldPoll && pollingRef.current) {
+      clearInterval(pollingRef.current)
+      pollingRef.current = null
+      setIsPolling(false)
+    }
+
+    return () => {
+      if (pollingRef.current) {
+        clearInterval(pollingRef.current)
+        pollingRef.current = null
+        setIsPolling(false)
       }
-    } else if (pollingInterval) {
-      // Stop polling when battle becomes active or user is not a participant
-      clearInterval(pollingInterval)
-      setPollingInterval(null)
     }
   }, [battle?.status, isParticipant()])
 
-  // Cleanup polling on unmount
+  // Cleanup polling on unmount (safety)
   useEffect(() => {
     return () => {
-      if (pollingInterval) {
-        clearInterval(pollingInterval)
+      if (pollingRef.current) {
+        clearInterval(pollingRef.current)
+        pollingRef.current = null
       }
     }
-  }, [pollingInterval])
+  }, [])
 
-  const fetchBattle = async () => {
+  const fetchBattle = async (silent: boolean = false) => {
     try {
-      setIsLoading(true)
+      if (!silent) setIsLoading(true)
       setError(null)
       
       const result = await api.getBattle(battleId)
       
       if (result.success) {
         const newBattle = result.data
-        
-        // Check if battle status changed from waiting to active
-        if (battle && battle.status === 'waiting' && newBattle.status === 'active') {
-          toast.success('🎉 Battle is now active!', {
-            description: 'Both participants have joined. The battle begins!',
-            duration: 5000
-          })
-        }
-        
-        setBattle(newBattle)
+
+        setBattle(prev => {
+          if (!prev) return newBattle
+
+          const statusChanged = prev.status === 'waiting' && newBattle.status === 'active'
+          const anyChanged = (
+            prev.status !== newBattle.status ||
+            prev.participant1_wallet !== newBattle.participant1_wallet ||
+            prev.participant2_wallet !== newBattle.participant2_wallet ||
+            prev.concept !== newBattle.concept
+          )
+
+          if (statusChanged) {
+            toast.success('🎉 Battle is now active!', {
+              description: 'Both participants have joined. The battle begins!',
+              duration: 5000
+            })
+          }
+
+          return anyChanged ? newBattle : prev
+        })
       } else {
         setError(result.error || 'Battle not found')
       }
@@ -123,7 +143,7 @@ export default function JoinBattlePage() {
       console.error('Error fetching battle:', err)
       setError('Failed to load battle details')
     } finally {
-      setIsLoading(false)
+      if (!silent) setIsLoading(false)
     }
   }
 
@@ -370,7 +390,7 @@ export default function JoinBattlePage() {
                       <p className="text-lg text-muted-foreground">
                         Share the QR code with another participant to start the battle!
                       </p>
-                      {pollingInterval && (
+                      {isPolling && (
                         <div className="mt-4 flex items-center justify-center gap-2">
                           <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-primary"></div>
                           <p className="text-sm text-muted-foreground">
@@ -507,7 +527,7 @@ export default function JoinBattlePage() {
                 Back to Home
               </Button>
               <Button 
-                onClick={fetchBattle}
+                onClick={() => fetchBattle()}
                 disabled={isLoading}
               >
                 Refresh Status
