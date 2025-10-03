@@ -39,6 +39,21 @@ export interface BattleConceptResponse {
   reasoning?: string;
 }
 
+// Message Enhancement Types
+export interface EnhancementRequest {
+  originalMessage: string;
+  enhancementType?: string;
+  targetAudience?: string;
+}
+
+export interface EnhancementResponse {
+  originalMessage: string;
+  enhancedMessage: string;
+  enhancementType: string;
+  improvements: string[];
+  confidence: number;
+}
+
 // User Types
 export interface AuthenticatedUser {
   id: string;
