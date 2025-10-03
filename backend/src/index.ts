@@ -3,6 +3,7 @@ import cors from 'cors';
 import dotenv from 'dotenv';
 import { supabase } from './config/supabase.js';
 import { authenticateToken, requireWallet } from './middleware/auth.js';
+import llmRoutes from './routes/llmRoutes.js';
 
 // Load environment variables
 dotenv.config();
@@ -13,6 +14,9 @@ const PORT: number = parseInt(process.env.PORT || '3001', 10);
 // Middleware
 app.use(cors());
 app.use(express.json());
+
+// LLM API routes
+app.use('/api/llm', authenticateToken, llmRoutes);
 
 // Health check endpoint
 app.get('/health', (req: Request, res: Response) => {
@@ -222,6 +226,9 @@ app.get('/api', (req: Request, res: Response) => {
       'POST /api/messages - Create a new message (🔒 Auth + Wallet required)',
       'PUT /api/messages/:id - Update a message (🔒 Auth + Wallet required)',
       'DELETE /api/messages/:id - Delete a message (🔒 Auth + Wallet required)',
+      'POST /api/llm/generate - Generate text using fal.ai (🔒 Auth required)',
+      'POST /api/llm/stream - Generate text with streaming (🔒 Auth required)',
+      'GET /api/llm/models - Get available models (🔒 Auth required)',
       'GET /api - This endpoint'
     ],
     authentication: {

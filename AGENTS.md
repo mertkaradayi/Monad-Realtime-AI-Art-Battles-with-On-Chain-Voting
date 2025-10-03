@@ -15,6 +15,13 @@ This project uses structured rule files located in `.cursor/rules/` folder:
 - **STYLING**: Use shadcn design tokens (`text-foreground`, `bg-background`, etc.)
 - **MCP INTEGRATION**: Use shadcn MCP for component discovery and management
 
+## 🔐 **Authentication**
+- **AUTHENTICATION PROVIDER**: Use Privy for user authentication
+- **REQUIRED**: Wrap app with PrivyProvider in Providers component
+- **COMPONENTS**: Use AuthButton component for login/logout functionality
+- **INTEGRATION**: Privy handles wallet connection and social login
+- **SETUP**: Reference PRIVY_SETUP.md for configuration details
+
 ## 🏗️ **Architecture**
 - Follow the repository pattern
 - Keep business logic in service layers
@@ -43,6 +50,8 @@ This project uses structured rule files located in `.cursor/rules/` folder:
 4. Apply shadcn design tokens for styling
 5. Test component functionality
 6. Ensure accessibility compliance
+7. **AUTHENTICATION**: Use Privy hooks (`usePrivy`, `useWallets`) for auth state
+8. **PROTECTED ROUTES**: Implement auth guards using Privy authentication status
 
 ## 🚨 **Enforcement**
 - **ALWAYS** suggest shadcn components for any UI element
@@ -50,3 +59,5 @@ This project uses structured rule files located in `.cursor/rules/` folder:
 - **REQUIRE** refactoring if non-shadcn UI elements are used
 - **PRIORITIZE** shadcn design system consistency
 - **MANDATORY** use shadcn MCP for component discovery and management
+- **AUTHENTICATION**: Always use Privy for user authentication and wallet connection
+- **SECURITY**: Implement proper auth guards and protected routes

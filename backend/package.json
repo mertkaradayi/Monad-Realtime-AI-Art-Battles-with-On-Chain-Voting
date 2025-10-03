@@ -11,6 +11,7 @@
     "type-check": "tsc --noEmit"
   },
   "dependencies": {
+    "@fal-ai/client": "^1.6.2",
     "@privy-io/server-auth": "^1.32.5",
     "@supabase/supabase-js": "^2.39.0",
     "cors": "^2.8.5",
