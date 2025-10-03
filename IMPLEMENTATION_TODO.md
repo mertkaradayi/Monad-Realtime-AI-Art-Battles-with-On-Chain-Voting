@@ -29,14 +29,35 @@
 - [x] **Demo UI**: Split-screen showing both participants and battle concept clearly
 - [x] **Test**: Second user can join, battle becomes active, both see battle concept
 
-### **Feature 4: Prompt Submission**
-- [ ] Show battle concept as fixed prompt starter (e.g., "Elephant is on its foot in a ball...")
-- [ ] Both participants complete the prompt (LARGE input fields with fixed starter)
-- [ ] Users cannot modify the battle concept, only complete it
-- [ ] Store full prompts in database (concept + user completion)
-- [ ] Show "Prompt submitted" confirmation (LARGE confirmation text)
+### **Feature 3.5: Battle Host Dashboard** ✅ **COMPLETED**
+- [x] Real-time participant tracking for battle creators
+- [x] Live polling system (every 3 seconds) to check for new participants
+- [x] Visual participant status display with wallet addresses
+- [x] Toast notifications when participants join ("👤 Participant 1 joined!", "👤 Participant 2 joined!")
+- [x] Battle status summary with participant counter (X/2 participants joined)
+- [x] **Demo UI**: Host dashboard with large participant cards and live updates indicator
+- [x] **QR Code Persistence**: Fixed QR code disappearing issue during polling
+- [x] **Test**: Host can see participants join in real-time, QR code stays visible
+
+### **Feature 4: Prompt Submission** 🚧 **NEXT TO IMPLEMENT**
+- [ ] **Database Schema**: Add prompt fields to battles table (participant1_prompt, participant2_prompt)
+- [ ] **Backend API**: Create prompt submission endpoint (`POST /api/battles/:id/submit-prompt`)
+- [ ] **Prompt Validation**: Ensure users can only submit prompts for their own participant slot
+- [ ] **UI for Participants**: Show battle concept as fixed prompt starter (e.g., "Elephant is on its foot in a ball...")
+- [ ] **Input Fields**: Large textarea for participants to complete the prompt (LARGE input fields)
+- [ ] **Concept Protection**: Users cannot modify the battle concept, only complete it
+- [ ] **Submission Logic**: Store full prompts in database (concept + user completion)
+- [ ] **Confirmation**: Show "Prompt submitted" confirmation (LARGE confirmation text)
+- [ ] **Status Updates**: Update battle status to "prompts_submitted" when both prompts are in
 - [ ] **Demo UI**: Side-by-side prompt submission with fixed concept and completion fields
-- [ ] **Test**: Can submit prompts, see confirmation, concept is fixed
+- [ ] **Test**: Can submit prompts, see confirmation, concept is fixed, both participants can submit
+
+#### **Host Dashboard Enhancements (Feature 4)**
+- [ ] Show per-participant prompt status (Pending/Submitted)
+- [ ] Display prompt previews (truncated) with hide/reveal until both submitted
+- [ ] Provide "Start Image Generation" control when both prompts are submitted (or auto-advance)
+- [ ] Add submission countdown/timer visible to audience
+- [ ] Toast notifications when each prompt is submitted
 
 ### **Feature 5: Image Generation (fal.ai)**
 - [ ] When both prompts submitted, trigger image generation
@@ -46,6 +67,12 @@
 - [ ] **Demo UI**: Full-screen loading with progress indicators and battle concept display
 - [ ] **Test**: Images generate successfully, URLs stored, concept is preserved
 
+#### **Host Dashboard Enhancements (Feature 5)**
+- [ ] Show per-participant generation status (Queued → Generating → Complete)
+- [ ] Visual progress indicators/spinners for each image job
+- [ ] Error state with retry control per participant
+- [ ] Timestamps for generation start/finish
+
 ### **Feature 6: Image Display & Voting QR Generation**
 - [ ] Show both generated images side by side (LARGE images - 600x600px minimum)
 - [ ] Display which participant created which image (LARGE labels)
@@ -53,6 +80,13 @@
 - [ ] Show battle concept and "Voting Phase" status (LARGE status banner)
 - [ ] **Demo UI**: Split-screen with large images, clear participant labels, battle concept, and VOTING QR code
 - [ ] **Test**: Can see both images clearly, battle concept is visible, voting QR is generated
+
+#### **Host Dashboard Enhancements (Feature 6)**
+- [ ] Present both images side-by-side with large labels
+- [ ] Generate and display Voting QR with copy link button
+- [ ] "Start Voting" control to transition to voting phase
+- [ ] Optional blur/hide images toggle until reveal
+- [ ] Voting phase countdown timer
 
 ### **Feature 7: Voting Interface**
 - [ ] Audience scans VOTING QR code to access voting interface
@@ -63,17 +97,34 @@
 - [ ] **Demo UI**: Large voting buttons under each image with clear labels and "Scan QR to Vote" instruction
 - [ ] **Test**: Can vote, vote is recorded, multiple people can vote
 
+#### **Host Dashboard Enhancements (Feature 7)**
+- [ ] Show live incoming votes per participant (aggregated)
+- [ ] Display active voters/connected wallets count
+- [ ] "End Voting" control to close voting phase
+- [ ] Surface duplicate-vote rejections (1/wallet) in logs panel
+
 ### **Feature 8: Real-time Vote Counting**
 - [ ] Show live vote counts (LARGE, animated counters)
 - [ ] Update counts in real-time
 - [ ] **Demo UI**: Prominent vote counters with animations and sound effects
 - [ ] **Test**: Vote counts update immediately
 
+#### **Host Dashboard Enhancements (Feature 8)**
+- [ ] Large, animated counters for each participant
+- [ ] Optional sound toggle for vote events
+- [ ] Simple trend graph (optional) for audience engagement
+
 ### **Feature 9: Winner Determination**
 - [ ] When voting ends, calculate winner
 - [ ] Show winner announcement (LARGE, dramatic winner reveal)
 - [ ] **Demo UI**: Full-screen winner celebration with confetti/animations
 - [ ] **Test**: Winner is determined correctly
+
+#### **Host Dashboard Enhancements (Feature 9)**
+- [ ] "Reveal Winner" control with dramatic animation trigger
+- [ ] Show final tallies and margin of victory
+- [ ] Tie-break workflow (e.g., quick runoff or host tiebreak)
+- [ ] "Proceed to Mint" button
 
 ### **Feature 10: NFT Minting**
 - [ ] Mint winner's image as NFT on Monad
@@ -82,12 +133,22 @@
 - [ ] **Demo UI**: Prominent NFT minting status with blockchain transaction details
 - [ ] **Test**: NFT is minted successfully
 
+#### **Host Dashboard Enhancements (Feature 10)**
+- [ ] Mint progress indicator with transaction hash and explorer link
+- [ ] Retry on failure with surfaced error details
+- [ ] Share QR/link to view minted NFT
+
 ### **Feature 11: Battle Results**
 - [ ] Show complete battle results (LARGE summary display)
 - [ ] Display minted NFT (LARGE NFT preview)
 - [ ] Show battle history
 - [ ] **Demo UI**: Full-screen results with large NFT display and battle summary
 - [ ] **Test**: Can view results and NFT
+
+#### **Host Dashboard Enhancements (Feature 11)**
+- [ ] Present final summary view (concept, prompts, images, votes, winner, NFT)
+- [ ] Share results link/QR and download assets
+- [ ] "Start New Battle" control for quick reset
 
 ---
 
@@ -172,19 +233,65 @@ For each feature:
 
 **Next Feature to Implement**: Feature 4 - Prompt Submission
 
+**Implementation Priority**: 
+1. **Database Schema Update** - Add prompt fields to battles table
+2. **Backend API Development** - Create prompt submission endpoint
+3. **Frontend UI Development** - Build prompt submission interface
+4. **Integration Testing** - Test full prompt submission flow
+
 **Last Updated**: January 3, 2025
 
 **Recent Updates**:
 - ✅ **Feature 1 COMPLETED**: Battle Creation & QR Code working perfectly
 - ✅ **Feature 2 COMPLETED**: First participant auto-joining and waiting screen
 - ✅ **Feature 3 COMPLETED**: Second participant joining and active battle display
+- ✅ **Feature 3.5 COMPLETED**: Battle Host Dashboard with real-time participant tracking
 - ✅ **QR Code Testing**: Successfully tested on mobile device
 - 🐛 **Bug Fixed**: Wallet connection state update issue resolved
 - 🐛 **Bug Fixed**: Atomic UPDATE query logic fixed for battle joining
+- 🐛 **Bug Fixed**: QR code disappearing issue during polling resolved
 - ✅ **Auto-Join**: Users automatically become participants when scanning QR code
 - ✅ **Demo UI**: Large waiting screen with battle concept and participant status
 - ✅ **Split-Screen UI**: Active battle display with both participants and battle concept
 - ✅ **Real-time Updates**: Polling system for automatic status updates
+- ✅ **Host Dashboard**: Real-time participant tracking with live notifications
 - ✅ **Race Condition Fix**: Atomic database operations prevent duplicate participants
 - ✅ **Comprehensive Testing**: Full test suite for Features 1-3 with manual testing guide
 - ✅ **QR Code Test Fix**: Fixed QR generation test to properly validate data URL format
+- 🗑️ **Database Flush**: Successfully flushed database for clean testing environment
+
+---
+
+## 🎯 **FEATURE 4 IMPLEMENTATION PLAN**
+
+### **Step 1: Database Schema Update**
+```sql
+-- Add prompt fields to battles table
+ALTER TABLE battles ADD COLUMN participant1_prompt TEXT;
+ALTER TABLE battles ADD COLUMN participant2_prompt TEXT;
+ALTER TABLE battles ADD COLUMN prompts_submitted_at TIMESTAMPTZ;
+```
+
+### **Step 2: Backend API Development**
+- **Endpoint**: `POST /api/battles/:id/submit-prompt`
+- **Validation**: Ensure user is a participant in the battle
+- **Logic**: Update the appropriate participant prompt field
+- **Status Update**: Change battle status to "prompts_submitted" when both prompts are in
+
+### **Step 3: Frontend UI Development**
+- **Participant View**: Show prompt submission interface when battle is active
+- **Fixed Concept**: Display battle concept as uneditable starter text
+- **Input Field**: Large textarea for prompt completion
+- **Submit Button**: Submit prompt and show confirmation
+- **Real-time Updates**: Show when other participant submits their prompt
+
+### **Step 4: Integration Points**
+- **Join Page**: Add prompt submission UI after battle becomes active
+- **Host Dashboard**: Show prompt submission status
+- **Status Flow**: waiting → active → prompts_submitted → (next feature)
+
+### **Step 5: Testing Strategy**
+- **Manual Testing**: Create battle, join as both participants, submit prompts
+- **Validation Testing**: Ensure users can only submit for their own slot
+- **UI Testing**: Verify large, demo-friendly interface
+- **Integration Testing**: Test full flow from battle creation to prompt submission
