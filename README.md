@@ -1,6 +1,6 @@
 # Battle Semantic
 
-AI-powered semantic battle application built with Next.js, TypeScript, Supabase, and Privy authentication.
+AI-powered semantic battle application with automated database management, built with Next.js, TypeScript, Supabase MCP, and Privy authentication.
 
 ## 🚀 Quick Start
 
@@ -33,8 +33,8 @@ Comprehensive documentation is available in the [`docs/`](./docs/) directory:
 ## 🛠️ Tech Stack
 
 - **Frontend**: Next.js 15 + React 19 + Tailwind CSS + shadcn/ui
-- **Backend**: Express.js + TypeScript + Supabase + Privy Auth
-- **Database**: PostgreSQL (via Supabase)
+- **Backend**: Express.js + TypeScript + Supabase MCP + Privy Auth
+- **Database**: PostgreSQL (via Supabase) with AI-driven schema management
 - **Authentication**: Privy (MetaMask wallet integration)
 - **Development**: Monorepo with npm workspaces
 
@@ -48,6 +48,15 @@ npm run build         # Build both
 npm run install:all   # Install all dependencies
 ```
 
+## 🎯 Key Features
+
+- **AI-Driven Database Management**: Schema changes via Supabase MCP tools
+- **Automated TypeScript Types**: Auto-generated from database schema
+- **Wallet Authentication**: MetaMask integration via Privy
+- **Modern UI**: shadcn/ui components with Tailwind CSS
+- **Type-Safe**: Full TypeScript implementation
+- **Real-time Database**: Supabase PostgreSQL with RLS
+
 ## 🔧 Environment Variables
 
 **Backend (.env):**
@@ -60,6 +69,9 @@ SUPABASE_SERVICE_ROLE_KEY=your_supabase_service_role_key
 # Privy Configuration
 PRIVY_APP_ID=your_privy_app_id
 PRIVY_APP_SECRET=your_privy_app_secret
+
+# Fal.ai Configuration
+FAL_KEY=your_fal_ai_api_key
 
 # Server Configuration
 PORT=3001
