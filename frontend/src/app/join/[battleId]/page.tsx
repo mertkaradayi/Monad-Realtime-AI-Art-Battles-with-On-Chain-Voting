@@ -32,13 +32,77 @@ export default function JoinBattlePage() {
   const [isLoading, setIsLoading] = useState(false)
   const [isJoining, setIsJoining] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [autoJoining, setAutoJoining] = useState(false)
+  const [pollingInterval, setPollingInterval] = useState<NodeJS.Timeout | null>(null)
 
-  // Fetch battle details
+  // Fetch battle details and auto-join if possible
   useEffect(() => {
     if (battleId && ready && authenticated) {
       fetchBattle()
     }
   }, [battleId, ready, authenticated])
+
+  const canJoin = () => {
+    if (!battle || !authenticated || !user?.wallet?.address) return false
+    if (battle.status !== 'waiting') return false
+    if (battle.participant1_wallet === user.wallet.address || 
+        battle.participant2_wallet === user.wallet.address) return false
+    if (battle.participant1_wallet && battle.participant2_wallet) return false
+    return true
+  }
+
+  const isParticipant = () => {
+    if (!battle || !user?.wallet?.address) return false
+    return battle.participant1_wallet === user.wallet.address || 
+           battle.participant2_wallet === user.wallet.address
+  }
+
+  // Auto-join battle when user is authenticated and battle is loaded
+  useEffect(() => {
+    if (battle && authenticated && user?.wallet?.address && canJoin() && !isJoining && !autoJoining) {
+      setAutoJoining(true)
+      toast.info('Automatically joining battle...', {
+        description: 'You will become a participant'
+      })
+      
+      // Small delay to ensure UI is ready
+      const timer = setTimeout(() => {
+        handleJoinBattle()
+      }, 1000)
+      
+      return () => clearTimeout(timer)
+    }
+  }, [battle, authenticated, user?.wallet?.address])
+
+  // Poll for battle updates when battle is in waiting state
+  useEffect(() => {
+    if (battle && battle.status === 'waiting' && isParticipant()) {
+      // Start polling every 3 seconds to check for second participant
+      const interval = setInterval(() => {
+        fetchBattle()
+      }, 3000)
+      
+      setPollingInterval(interval)
+      
+      return () => {
+        clearInterval(interval)
+        setPollingInterval(null)
+      }
+    } else if (pollingInterval) {
+      // Stop polling when battle becomes active or user is not a participant
+      clearInterval(pollingInterval)
+      setPollingInterval(null)
+    }
+  }, [battle?.status, isParticipant()])
+
+  // Cleanup polling on unmount
+  useEffect(() => {
+    return () => {
+      if (pollingInterval) {
+        clearInterval(pollingInterval)
+      }
+    }
+  }, [pollingInterval])
 
   const fetchBattle = async () => {
     try {
@@ -48,7 +112,17 @@ export default function JoinBattlePage() {
       const result = await api.getBattle(battleId)
       
       if (result.success) {
-        setBattle(result.data)
+        const newBattle = result.data
+        
+        // Check if battle status changed from waiting to active
+        if (battle && battle.status === 'waiting' && newBattle.status === 'active') {
+          toast.success('🎉 Battle is now active!', {
+            description: 'Both participants have joined. The battle begins!',
+            duration: 5000
+          })
+        }
+        
+        setBattle(newBattle)
       } else {
         setError(result.error || 'Battle not found')
       }
@@ -96,21 +170,6 @@ export default function JoinBattlePage() {
     } finally {
       setIsJoining(false)
     }
-  }
-
-  const canJoin = () => {
-    if (!battle || !authenticated || !user?.wallet?.address) return false
-    if (battle.status !== 'waiting') return false
-    if (battle.participant1_wallet === user.wallet.address || 
-        battle.participant2_wallet === user.wallet.address) return false
-    if (battle.participant1_wallet && battle.participant2_wallet) return false
-    return true
-  }
-
-  const isParticipant = () => {
-    if (!battle || !user?.wallet?.address) return false
-    return battle.participant1_wallet === user.wallet.address || 
-           battle.participant2_wallet === user.wallet.address
   }
 
   // Show loading state while Privy initializes
@@ -169,6 +228,16 @@ export default function JoinBattlePage() {
             <CardContent className="text-center py-12">
               <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
               <p className="text-muted-foreground">Loading battle details...</p>
+            </CardContent>
+          </Card>
+        ) : autoJoining ? (
+          <Card className="max-w-2xl mx-auto">
+            <CardContent className="text-center py-12">
+              <div className="space-y-4">
+                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto"></div>
+                <h2 className="text-2xl font-semibold">Joining Battle...</h2>
+                <p className="text-muted-foreground">You will automatically become a participant</p>
+              </div>
             </CardContent>
           </Card>
         ) : battle ? (
@@ -268,8 +337,54 @@ export default function JoinBattlePage() {
               </Card>
             )}
 
+            {/* Waiting Status - Large Demo UI */}
+            {isParticipant() && battle.status === 'waiting' && (
+              <Card className="border-2 border-primary">
+                <CardContent className="text-center py-16">
+                  <div className="space-y-8">
+                    <div className="text-6xl">⏳</div>
+                    <div>
+                      <h2 className="text-4xl font-bold text-primary mb-4">
+                        WAITING FOR PARTICIPANT 2
+                      </h2>
+                      <p className="text-xl text-muted-foreground mb-6">
+                        You are Participant {battle.participant1_wallet === user?.wallet?.address ? '1' : '2'}
+                      </p>
+                    </div>
+                    
+                    <div className="bg-muted p-6 rounded-lg max-w-2xl mx-auto">
+                      <h3 className="text-2xl font-semibold mb-4">Battle Concept:</h3>
+                      <p className="text-xl text-foreground font-medium">
+                        "{battle.concept}"
+                      </p>
+                    </div>
+                    
+                    <div className="flex items-center justify-center gap-4 text-lg">
+                      <Badge variant="default" className="text-lg px-4 py-2">
+                        1/2 Participants Joined
+                      </Badge>
+                    </div>
+                    
+                    <div className="text-center">
+                      <p className="text-lg text-muted-foreground">
+                        Share the QR code with another participant to start the battle!
+                      </p>
+                      {pollingInterval && (
+                        <div className="mt-4 flex items-center justify-center gap-2">
+                          <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-primary"></div>
+                          <p className="text-sm text-muted-foreground">
+                            Waiting for second participant...
+                          </p>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+
             {/* Status Messages */}
-            {isParticipant() && (
+            {isParticipant() && battle.status !== 'waiting' && (
               <Alert>
                 <AlertDescription>
                   <div className="text-center">
@@ -280,15 +395,95 @@ export default function JoinBattlePage() {
               </Alert>
             )}
 
+            {/* Active Battle - Split Screen Demo UI */}
             {battle.status === 'active' && (
-              <Alert>
-                <AlertDescription>
-                  <div className="text-center">
-                    <h3 className="font-semibold mb-2">⚔️ Battle is Active!</h3>
-                    <p>Both participants have joined. The battle is now in progress.</p>
+              <Card className="border-2 border-green-500">
+                <CardContent className="py-16">
+                  <div className="space-y-8">
+                    {/* Battle Status Header */}
+                    <div className="text-center">
+                      <div className="text-6xl mb-4">⚔️</div>
+                      <h2 className="text-4xl font-bold text-green-600 mb-2">
+                        BATTLE IS ACTIVE!
+                      </h2>
+                      <p className="text-xl text-muted-foreground">
+                        Both participants have joined. The battle is now in progress.
+                      </p>
+                    </div>
+
+                    {/* Battle Concept */}
+                    <div className="bg-muted p-6 rounded-lg max-w-4xl mx-auto">
+                      <h3 className="text-2xl font-semibold mb-4 text-center">Battle Concept:</h3>
+                      <p className="text-xl text-foreground font-medium text-center">
+                        "{battle.concept}"
+                      </p>
+                    </div>
+
+                    {/* Split Screen Participants */}
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-6xl mx-auto">
+                      {/* Participant 1 */}
+                      <Card className="border-2 border-blue-500">
+                        <CardContent className="text-center py-8">
+                          <div className="space-y-4">
+                            <div className="text-4xl">👤</div>
+                            <h3 className="text-2xl font-bold text-blue-600">Participant 1</h3>
+                            <div className="bg-blue-50 p-4 rounded-lg">
+                              <p className="font-mono text-lg">
+                                {battle.participant1_wallet ? 
+                                  `${battle.participant1_wallet.slice(0, 6)}...${battle.participant1_wallet.slice(-4)}` : 
+                                  'Unknown'
+                                }
+                              </p>
+                            </div>
+                            {battle.participant1_wallet === user?.wallet?.address && (
+                              <Badge variant="default" className="text-lg px-4 py-2">
+                                🎯 That's You!
+                              </Badge>
+                            )}
+                          </div>
+                        </CardContent>
+                      </Card>
+
+                      {/* Participant 2 */}
+                      <Card className="border-2 border-purple-500">
+                        <CardContent className="text-center py-8">
+                          <div className="space-y-4">
+                            <div className="text-4xl">👤</div>
+                            <h3 className="text-2xl font-bold text-purple-600">Participant 2</h3>
+                            <div className="bg-purple-50 p-4 rounded-lg">
+                              <p className="font-mono text-lg">
+                                {battle.participant2_wallet ? 
+                                  `${battle.participant2_wallet.slice(0, 6)}...${battle.participant2_wallet.slice(-4)}` : 
+                                  'Unknown'
+                                }
+                              </p>
+                            </div>
+                            {battle.participant2_wallet === user?.wallet?.address && (
+                              <Badge variant="default" className="text-lg px-4 py-2">
+                                🎯 That's You!
+                              </Badge>
+                            )}
+                          </div>
+                        </CardContent>
+                      </Card>
+                    </div>
+
+                    {/* Status Badge */}
+                    <div className="flex items-center justify-center">
+                      <Badge variant="default" className="text-xl px-6 py-3 bg-green-600">
+                        2/2 Participants Joined - Battle Active
+                      </Badge>
+                    </div>
+
+                    {/* Next Phase Info */}
+                    <div className="text-center">
+                      <p className="text-lg text-muted-foreground">
+                        🎨 Ready for prompt submission phase!
+                      </p>
+                    </div>
                   </div>
-                </AlertDescription>
-              </Alert>
+                </CardContent>
+              </Card>
             )}
 
             {battle.status !== 'waiting' && !isParticipant() && (

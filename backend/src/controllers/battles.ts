@@ -160,68 +160,88 @@ export class BattleController {
         return;
       }
 
-      // Get current battle
-      const { data: battle, error: fetchError } = await supabaseAdmin
+      // ATOMIC OPERATION: Try to join as participant 1 first
+      let { data: updatedBattle, error: updateError } = await supabaseAdmin
         .from('battles')
-        .select('*')
+        .update({ 
+          participant1_wallet: walletAddress,
+          status: 'waiting'
+        })
         .eq('id', id)
-        .single();
-      
-      if (fetchError) {
-        throw fetchError;
-      }
-
-      if (!battle) {
-        res.status(404).json({
-          success: false,
-          error: 'Battle not found'
-        });
-        return;
-      }
-
-      if (battle.status !== 'waiting') {
-        res.status(400).json({
-          success: false,
-          error: 'Battle is not accepting participants'
-        });
-        return;
-      }
-
-      // Check if user is already a participant
-      if (battle.participant1_wallet === walletAddress || battle.participant2_wallet === walletAddress) {
-        res.status(400).json({
-          success: false,
-          error: 'Already a participant in this battle'
-        });
-        return;
-      }
-
-      // Assign participant position
-      let updateData: any = {};
-      let newStatus = 'waiting';
-
-      if (!battle.participant1_wallet) {
-        updateData.participant1_wallet = walletAddress;
-      } else if (!battle.participant2_wallet) {
-        updateData.participant2_wallet = walletAddress;
-        newStatus = 'active'; // Battle becomes active when second participant joins
-      } else {
-        res.status(400).json({
-          success: false,
-          error: 'Battle is full'
-        });
-        return;
-      }
-
-      updateData.status = newStatus;
-
-      // Update battle
-      const { data: updatedBattle, error: updateError } = await supabaseAdmin
-        .from('battles')
-        .update(updateData)
-        .eq('id', id)
+        .eq('status', 'waiting')
+        .is('participant1_wallet', null)
+        .or(`participant2_wallet.is.null,participant2_wallet.neq.${walletAddress}`)
         .select()
         .single();
+
+      // If participant1 slot is taken, try participant2 slot
+      if (updateError || !updatedBattle) {
+        const { data: battle, error: fetchError } = await supabaseAdmin
+          .from('battles')
+          .select('*')
+          .eq('id', id)
+          .single();
+        
+        if (fetchError || !battle) {
+          res.status(404).json({
+            success: false,
+            error: 'Battle not found'
+          });
+          return;
+        }
+
+        // Check if user is already a participant
+        if (battle.participant1_wallet === walletAddress || battle.participant2_wallet === walletAddress) {
+          res.status(400).json({
+            success: false,
+            error: 'Already a participant in this battle'
+          });
+          return;
+        }
+
+        // Check if battle is full
+        if (battle.participant1_wallet && battle.participant2_wallet) {
+          res.status(400).json({
+            success: false,
+            error: 'Battle is full - only the first 2 users can participate'
+          });
+          return;
+        }
+
+        // Check if battle is not in waiting status
+        if (battle.status !== 'waiting') {
+          res.status(400).json({
+            success: false,
+            error: 'Battle is not accepting participants'
+          });
+          return;
+        }
+
+        // Try to join as participant 2 (atomic operation)
+        const result = await supabaseAdmin
+          .from('battles')
+          .update({ 
+            participant2_wallet: walletAddress,
+            status: 'active' // Battle becomes active when second participant joins
+          })
+          .eq('id', id)
+          .eq('status', 'waiting')
+          .not('participant1_wallet', 'is', null)
+          .is('participant2_wallet', null)
+          .neq('participant1_wallet', walletAddress)
+          .select()
+          .single();
+
+        if (result.error || !result.data) {
+          res.status(400).json({
+            success: false,
+            error: 'Failed to join battle - slot may have been taken by another user'
+          });
+          return;
+        }
+
+        updatedBattle = result.data;
+      }
       
       if (updateError) {
         throw updateError;

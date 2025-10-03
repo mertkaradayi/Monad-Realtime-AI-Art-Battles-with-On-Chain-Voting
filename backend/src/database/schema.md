@@ -25,6 +25,8 @@
 ### Indexes
 - **idx_battles_status**: Index on `status` column for better query performance
 - **idx_battles_created_at**: Index on `created_at` column for better query performance
+- **idx_unique_participant1_active**: Unique index on `participant1_wallet` for active battles (prevents duplicate participants)
+- **idx_unique_participant2_active**: Unique index on `participant2_wallet` for active battles (prevents duplicate participants)
 
 ### Security
 - **Row Level Security (RLS)**: Enabled on battles table
@@ -75,6 +77,12 @@
 - Updated TypeScript types to reflect current schema
 - Cleaned up database schema documentation
 - Aligned database with AI Art Battles system implementation
+
+### 2025-01-03 - Race Condition Prevention
+- Added unique constraints to prevent duplicate participants across battles
+- Added check constraint to prevent same wallet in both participant slots
+- Implemented atomic database operations for battle joining
+- Ensures only the first 2 users can participate in each battle
 
 ## Notes
 - This schema is managed via Supabase MCP tools
