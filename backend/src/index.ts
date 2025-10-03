@@ -13,7 +13,6 @@ import {
   notFoundHandler 
 } from './middleware/middleware.js';
 import llmRoutes from './routes/llm.js';
-import messageRoutes from './routes/messages.js';
 import battleRoutes from './routes/battles.js';
 
 // Validate configuration on startup
@@ -39,9 +38,6 @@ app.use(rateLimiter);
 
 // LLM API routes (with LLM-specific rate limiting)
 app.use('/api/llm', auth, llmRateLimiter, llmRoutes);
-
-// Message API routes
-app.use('/api/messages', auth, messageRoutes);
 
 // Battle API routes
 app.use('/api/battles', auth, battleRoutes);
@@ -89,18 +85,11 @@ app.get('/test-supabase', async (req: Request, res: Response) => {
 // Basic API routes
 app.get('/api', (req: Request, res: Response) => {
   res.json({ 
-    message: 'Battle Semantic Backend API',
+    message: 'AI Art Battles Backend API',
     version: '1.0.0',
     endpoints: [
       'GET /health - Health check',
       'GET /test-supabase - Test Supabase connection',
-      'GET /api/messages - Get all messages (🔒 Auth required)',
-      'POST /api/messages - Create a new message (🔒 Auth + Wallet required)',
-      'POST /api/messages/enhance - Enhance a message using AI (🔒 Auth required)',
-      'POST /api/messages/enhanced - Create message with auto-enhancement (🔒 Auth + Wallet required)',
-      'GET /api/messages/enhancement-options - Get enhancement options (🔒 Auth required)',
-      'PUT /api/messages/:id - Update a message (🔒 Auth + Wallet required)',
-      'DELETE /api/messages/:id - Delete a message (🔒 Auth + Wallet required)',
       'POST /api/llm/generate - Generate text using fal.ai (🔒 Auth required)',
       'POST /api/llm/stream - Generate text with streaming (🔒 Auth required)',
       'GET /api/llm/models - Get available models (🔒 Auth required)',
@@ -115,10 +104,10 @@ app.get('/api', (req: Request, res: Response) => {
       wallet_required: 'Connected wallet required for write operations'
     },
     features: {
-      message_enhancement: 'AI-powered message enhancement using fal.ai',
       llm_integration: 'Direct access to multiple LLM models via fal.ai any-llm',
       real_time_streaming: 'Real-time text generation with streaming support',
-      battle_system: 'AI art battles with concept generation and QR code joining'
+      battle_system: 'AI art battles with concept generation and QR code joining',
+      qr_codes: 'QR code generation for battle joining and voting'
     }
   });
 });

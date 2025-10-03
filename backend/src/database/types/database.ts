@@ -62,36 +62,6 @@ export type Database = {
         }
         Relationships: []
       }
-      messages: {
-        Row: {
-          author: string | null
-          content: string
-          created_at: string | null
-          enhancement_data: Json | null
-          id: string
-          original_content: string | null
-          updated_at: string | null
-        }
-        Insert: {
-          author?: string | null
-          content: string
-          created_at?: string | null
-          enhancement_data?: Json | null
-          id?: string
-          original_content?: string | null
-          updated_at?: string | null
-        }
-        Update: {
-          author?: string | null
-          content?: string
-          created_at?: string | null
-          enhancement_data?: Json | null
-          id?: string
-          original_content?: string | null
-          updated_at?: string | null
-        }
-        Relationships: []
-      }
     }
     Views: {
       [_ in never]: never
@@ -233,22 +203,8 @@ export const Constants = {
   },
 } as const
 
-// Convenience types for the battles table
+// Convenience types for battles
 export type Battle = Tables<'battles'>
 export type BattleInsert = TablesInsert<'battles'>
 export type BattleUpdate = TablesUpdate<'battles'>
-
-// Convenience types for the messages table (existing)
-export type Message = Tables<'messages'>
-export type MessageInsert = TablesInsert<'messages'>
-export type MessageUpdate = TablesUpdate<'messages'>
-
-// Enhancement data type for better type safety (existing)
-export interface EnhancementData {
-  type: 'grammar' | 'style' | 'clarity' | 'tone'
-  confidence: number
-  improvements: string[]
-  original_score?: number
-  enhanced_score?: number
-  timestamp: string
-}
+export type BattleStatus = Enums<'battle_status'>

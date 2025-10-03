@@ -1,5 +1,5 @@
 /**
- * Essential Types for Battle Semantic Backend
+ * Essential Types for AI Art Battles Backend
  */
 
 // API Response Types
@@ -8,29 +8,6 @@ export interface ApiResponse<T = any> {
   data?: T;
   error?: string;
   message?: string;
-}
-
-// Message Types
-export interface Message {
-  id: string;
-  content: string;
-  author: string;
-  created_at: string;
-  updated_at: string;
-  original_content?: string;
-  enhancement_data?: any;
-}
-
-export interface CreateMessageRequest {
-  content: string;
-  author?: string;
-  enhancementType?: string;
-  targetAudience?: string;
-  autoEnhance?: boolean;
-}
-
-export interface UpdateMessageRequest {
-  content: string;
 }
 
 // LLM Types
@@ -51,19 +28,15 @@ export interface LLMResponse {
   requestId: string;
 }
 
-// Enhancement Types
-export interface EnhancementRequest {
-  originalMessage: string;
-  enhancementType?: 'grammar' | 'clarity' | 'professional' | 'creative' | 'concise';
-  targetAudience?: 'general' | 'professional' | 'academic' | 'casual';
+// Battle Concept Types
+export interface BattleConceptRequest {
+  prompt: string;
+  temperature?: number;
 }
 
-export interface EnhancementResponse {
-  originalMessage: string;
-  enhancedMessage: string;
-  enhancementType: string;
-  improvements: string[];
-  confidence: number;
+export interface BattleConceptResponse {
+  concept: string;
+  reasoning?: string;
 }
 
 // User Types
