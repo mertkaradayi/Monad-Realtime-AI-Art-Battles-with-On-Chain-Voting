@@ -1,6 +1,6 @@
-# Battle Semantic
+# Monad Realtime AI Art Battles with On-Chain Voting
 
-AI-powered semantic battle application with automated database management, built with Next.js, TypeScript, Supabase MCP, and Privy authentication.
+A decentralized AI-powered art battle platform where users can create, vote on, and compete with AI-generated artwork. Built with Next.js, TypeScript, Supabase, and smart contracts for on-chain voting.
 
 ## 🚀 Quick Start
 
@@ -8,8 +8,7 @@ AI-powered semantic battle application with automated database management, built
 # Install dependencies
 npm run install:all
 
-# Follow the complete setup guide
-# See docs/PROJECT_SETUP.md for detailed instructions
+# Set up environment variables (see Environment Variables section below)
 
 # Start development
 npm run dev:backend  # Terminal 1
@@ -20,43 +19,42 @@ npm run dev:frontend # Terminal 2
 - Frontend: http://localhost:3000
 - Backend: http://localhost:3001
 
-## 📚 Documentation
+## 🎨 What is Battle Semantic?
 
-Comprehensive documentation is available in the [`docs/`](./docs/) directory:
+Battle Semantic is a revolutionary platform that combines AI art generation with blockchain voting. Users can:
 
-- **[Complete Setup Guide](./docs/PROJECT_SETUP.md)** - Full project setup from scratch
-- **[Privy Authentication](./docs/PRIVY_SETUP.md)** - Wallet authentication setup
-- **[Supabase Database](./docs/SUPABASE_SETUP.md)** - Database configuration
-- **[API Documentation](./docs/API_DOCUMENTATION.md)** - Complete API reference
-- **[Troubleshooting](./docs/TROUBLESHOOTING.md)** - Common issues and solutions
+- **Create AI Art Battles**: Generate unique artwork using AI and create voting battles
+- **Vote with Crypto**: Use your wallet to vote on your favorite artworks
+- **Earn Rewards**: Win battles and earn tokens for your creative contributions
+- **Real-time Updates**: Watch battles unfold in real-time with live voting results
 
 ## 🛠️ Tech Stack
 
 - **Frontend**: Next.js 15 + React 19 + Tailwind CSS + shadcn/ui
-- **Backend**: Express.js + TypeScript + Supabase MCP + Privy Auth
-- **Database**: PostgreSQL (via Supabase) with AI-driven schema management
+- **Backend**: Express.js + TypeScript + Supabase
+- **Database**: PostgreSQL (via Supabase) with real-time subscriptions
 - **Authentication**: Privy (MetaMask wallet integration)
+- **Smart Contracts**: Solidity + Foundry for on-chain voting
+- **AI Integration**: FAL.ai for art generation
 - **Development**: Monorepo with npm workspaces
 
-## Scripts
+## 📜 Available Scripts
 
 ```bash
 # Development
-npm run dev:frontend  # Start frontend
-npm run dev:backend   # Start backend
-npm run dev:watch     # Frontend with auto-restart
+npm run dev:frontend  # Start frontend development server
+npm run dev:backend   # Start backend development server
+npm run dev           # Start frontend (alias for dev:frontend)
 
 # Building
 npm run build         # Build both frontend and backend
 npm run build:frontend # Build frontend only
 npm run build:backend  # Build backend only
 
-# Testing
-npm run test          # Run all backend tests
-npm run test:fal      # Test FAL.ai integration
-npm run test:message  # Test message enhancement
-npm run test:demo     # Test message demo
-npm run test:watch    # Run tests in watch mode
+# Production
+npm run start         # Start frontend in production
+npm run start:frontend # Start frontend in production
+npm run start:backend  # Start backend in production
 
 # Utilities
 npm run install:all   # Install all dependencies
@@ -66,12 +64,14 @@ npm run lint          # Lint frontend code
 
 ## 🎯 Key Features
 
-- **AI-Driven Database Management**: Schema changes via Supabase MCP tools
-- **Automated TypeScript Types**: Auto-generated from database schema
+- **AI Art Generation**: Create unique artwork using FAL.ai integration
+- **On-Chain Voting**: Smart contract-based voting system for battles
+- **Real-time Updates**: Live battle results and voting progress
 - **Wallet Authentication**: MetaMask integration via Privy
 - **Modern UI**: shadcn/ui components with Tailwind CSS
 - **Type-Safe**: Full TypeScript implementation
-- **Real-time Database**: Supabase PostgreSQL with RLS
+- **Real-time Database**: Supabase PostgreSQL with live subscriptions
+- **QR Code Generation**: Easy battle sharing with QR codes
 
 ## 🔧 Environment Variables
 
@@ -103,7 +103,49 @@ NEXT_PUBLIC_PRIVY_APP_ID=your_privy_app_id_here
 NEXT_PUBLIC_API_BASE_URL=http://localhost:3001
 ```
 
-> **Note**: See the [complete setup guide](./docs/PROJECT_SETUP.md) for detailed configuration instructions.
+> **Note**: Copy the example files and fill in your actual API keys and configuration values.
+
+## 📁 Project Structure
+
+```
+battle-semantic/
+├── frontend/                 # Next.js frontend application
+│   ├── src/
+│   │   ├── app/             # App router pages
+│   │   ├── components/      # React components (shadcn/ui)
+│   │   ├── hooks/           # Custom React hooks
+│   │   └── lib/             # Utilities and configurations
+│   └── package.json
+├── backend/                  # Express.js backend API
+│   ├── src/
+│   │   ├── controllers/     # API route handlers
+│   │   ├── services/        # Business logic services
+│   │   ├── database/        # Database migrations and types
+│   │   └── middleware/      # Express middleware
+│   └── package.json
+├── contracts/                # Solidity smart contracts
+│   ├── src/                 # Contract source files
+│   ├── test/                # Contract tests
+│   ├── script/              # Deployment scripts
+│   └── foundry.toml         # Foundry configuration
+└── package.json             # Root workspace configuration
+```
+
+## 🔗 Smart Contracts
+
+The project includes Solidity smart contracts for on-chain voting:
+
+- **BattleVoting.sol**: Main voting contract for battle management
+- **Deployment Scripts**: Automated contract deployment
+- **Tests**: Comprehensive test coverage for smart contracts
+
+To work with contracts:
+```bash
+cd contracts
+forge build    # Compile contracts
+forge test     # Run tests
+forge script   # Deploy contracts
+```
 
 ## 🔒 Security & Environment Setup
 
@@ -129,3 +171,50 @@ NEXT_PUBLIC_API_BASE_URL=http://localhost:3001
 2. Verify no sensitive data is in tracked files
 3. Test that the application works with your environment variables
 4. Review the security checklist above
+
+## 🚀 Getting Started
+
+1. **Clone the repository**
+   ```bash
+   git clone https://github.com/mertkaradayi/Monad-Realtime-AI-Art-Battles-with-On-Chain-Voting.git
+   cd Monad-Realtime-AI-Art-Battles-with-On-Chain-Voting
+   ```
+
+2. **Install dependencies**
+   ```bash
+   npm run install:all
+   ```
+
+3. **Set up environment variables**
+   - Copy `backend/env.example` to `backend/.env`
+   - Copy `frontend/.env.local.example` to `frontend/.env.local`
+   - Fill in your API keys and configuration
+
+4. **Start development servers**
+   ```bash
+   npm run dev:backend   # Terminal 1
+   npm run dev:frontend  # Terminal 2
+   ```
+
+5. **Access the application**
+   - Frontend: http://localhost:3000
+   - Backend API: http://localhost:3001
+
+## 🤝 Contributing
+
+1. Fork the repository
+2. Create a feature branch (`git checkout -b feature/amazing-feature`)
+3. Commit your changes (`git commit -m 'Add some amazing feature'`)
+4. Push to the branch (`git push origin feature/amazing-feature`)
+5. Open a Pull Request
+
+## 📄 License
+
+This project is licensed under the ISC License - see the [LICENSE](LICENSE) file for details.
+
+## 🙏 Acknowledgments
+
+- Built for the Monad Hackathon
+- Uses FAL.ai for AI art generation
+- Powered by Supabase for real-time database
+- Smart contracts built with Foundry
