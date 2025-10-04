@@ -1,13 +1,17 @@
 [build]
   base = "frontend"
   command = "npm run build"
-  publish = "frontend/out"
+  publish = "frontend/.next"
 
 [build.environment]
   NODE_VERSION = "18"
   NPM_VERSION = "10"
 
-# Next.js static export redirects for client-side routing
+# Netlify Next.js plugin configuration
+[[plugins]]
+  package = "@netlify/plugin-nextjs"
+
+# Next.js App Router redirects
 [[redirects]]
   from = "/*"
   to = "/index.html"
