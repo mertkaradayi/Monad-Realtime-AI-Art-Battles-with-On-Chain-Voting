@@ -10,6 +10,9 @@ router.post('/', ...authenticateWallet, BattleController.createBattle);
 // Get all battles
 router.get('/', BattleController.getBattles);
 
+// Get battles created by current user
+router.get('/my-battles', ...authenticateWallet, BattleController.getBattlesByCreator);
+
 // Get battle by ID
 router.get('/:id', BattleController.getBattle);
 

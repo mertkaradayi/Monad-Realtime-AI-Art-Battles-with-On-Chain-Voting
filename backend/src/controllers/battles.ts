@@ -146,6 +146,47 @@ export class BattleController {
   }
 
   /**
+   * Get battles created by a specific wallet address
+   */
+  static async getBattlesByCreator(req: Request, res: Response): Promise<void> {
+    try {
+      const walletAddress = req.user?.wallet?.address;
+
+      if (!walletAddress) {
+        res.status(403).json({
+          success: false,
+          error: 'Wallet required',
+        });
+        return;
+      }
+
+      const { data: battles, error } = await supabaseAdmin
+        .from('battles')
+        .select('*')
+        .eq('creator_wallet', walletAddress)
+        .order('created_at', { ascending: false });
+      
+      if (error) {
+        throw error;
+      }
+      
+      res.json({ 
+        success: true,
+        data: battles || []
+      });
+    } catch (err) {
+      const error = err as Error;
+      console.error('Error fetching battles by creator:', error);
+      const includeDetails = config.server.nodeEnv !== 'production';
+      res.status(500).json({ 
+        success: false,
+        error: 'Failed to fetch battles',
+        ...(includeDetails ? { message: error.message } : {})
+      });
+    }
+  }
+
+  /**
    * Join battle (for participants)
    */
   static async joinBattle(req: Request, res: Response): Promise<void> {
@@ -400,14 +441,36 @@ export class BattleController {
         .select()
         .single();
       
-      if (updateError) {
+      if (updateError || !updatedBattle) {
         throw updateError;
+      }
+
+      let finalBattle = updatedBattle;
+
+      // Ensure status reflects both prompts even under concurrent submissions
+      if (
+        updatedBattle.participant1_prompt &&
+        updatedBattle.participant2_prompt &&
+        updatedBattle.status !== 'prompts_submitted'
+      ) {
+        const { data: statusSyncedBattle, error: statusUpdateError } = await supabaseAdmin
+          .from('battles')
+          .update({ status: 'prompts_submitted' })
+          .eq('id', id)
+          .select()
+          .single();
+
+        if (statusUpdateError || !statusSyncedBattle) {
+          throw statusUpdateError || new Error('Failed to update battle status after prompt submission');
+        }
+
+        finalBattle = statusSyncedBattle;
       }
       
       res.json({ 
         success: true,
         data: {
-          battle: updatedBattle,
+          battle: finalBattle,
           message: 'Prompt submitted successfully',
           fullPrompt: fullPrompt
         }
