@@ -32,14 +32,11 @@ export class QRGeneratorService {
    */
   static async generateVotingQR(battleId: string): Promise<string> {
     try {
-      const qrData = {
-        type: 'battle_vote',
-        battleId: battleId,
-        timestamp: new Date().toISOString()
-      };
+      // Generate QR code that directly points to the voting page
+      const baseUrl = process.env.FRONTEND_URL || 'http://localhost:3000';
+      const votingUrl = `${baseUrl}/vote/${battleId}`;
       
-      const qrString = JSON.stringify(qrData);
-      const qrDataURL = await QRCode.toDataURL(qrString, {
+      const qrDataURL = await QRCode.toDataURL(votingUrl, {
         width: 400,
         margin: 2,
         color: {

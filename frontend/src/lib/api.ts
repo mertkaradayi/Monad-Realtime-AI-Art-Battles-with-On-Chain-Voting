@@ -87,6 +87,7 @@ export const api = {
     return handleApiResponse(response);
   },
 
+
   // Join battle
   async joinBattle(id: string) {
     const headers = await getAuthHeaders();

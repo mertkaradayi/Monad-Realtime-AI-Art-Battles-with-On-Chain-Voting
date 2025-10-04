@@ -284,23 +284,8 @@ export class ContractDeploymentService {
       throw new Error('Contract not deployed. Please deploy the contract first.');
     }
 
-    const votingData = {
-      contractAddress: this.contractAddress,
-      battleId: battle.id,
-      concept: battle.concept,
-      participant1: battle.participant1_wallet,
-      participant2: battle.participant2_wallet,
-      participant1ImageUrl: battle.participant1_image_url,
-      participant2ImageUrl: battle.participant2_image_url,
-      network: 'monad_testnet',
-      chainId: 10143,
-      explorerUrl: `https://testnet.monadexplorer.com/address/${this.contractAddress}`,
-      votingUrl: `${process.env.FRONTEND_URL || 'http://localhost:3000'}/vote/${battle.id}`,
-    };
-
-    // Generate QR code image with voting data
-    const qrDataString = JSON.stringify(votingData);
-    return await QRGeneratorService.generateVotingQRFromData(qrDataString);
+    // Generate QR code that directly points to the voting page
+    return await QRGeneratorService.generateVotingQR(battle.id);
   }
 
   /**
