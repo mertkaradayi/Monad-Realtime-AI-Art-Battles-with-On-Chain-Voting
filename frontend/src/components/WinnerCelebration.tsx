@@ -230,18 +230,28 @@ export function WinnerCelebration({
               </Card>
             </div>
 
-            {/* Close Button */}
-            {onClose && (
-              <div className="text-center">
+            {/* Action Buttons */}
+            <div className="text-center space-y-4">
+              <div className="flex justify-center gap-4">
                 <Button
-                  onClick={onClose}
+                  onClick={() => window.location.href = `/results/${battleId}`}
                   size="lg"
-                  className="bg-gradient-to-r from-yellow-500 to-orange-500 hover:from-yellow-600 hover:to-orange-600 text-white text-lg px-8 py-3"
+                  className="bg-gradient-to-r from-blue-500 to-purple-500 hover:from-blue-600 hover:to-purple-600 text-white text-lg px-8 py-3"
                 >
-                  Close Celebration
+                  🏆 View Complete Results
                 </Button>
+                {onClose && (
+                  <Button
+                    onClick={onClose}
+                    size="lg"
+                    variant="outline"
+                    className="text-lg px-8 py-3"
+                  >
+                    Close Celebration
+                  </Button>
+                )}
               </div>
-            )}
+            </div>
           </CardContent>
         </Card>
       </div>

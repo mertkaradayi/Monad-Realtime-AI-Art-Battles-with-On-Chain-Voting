@@ -104,3 +104,28 @@ NEXT_PUBLIC_API_BASE_URL=http://localhost:3001
 ```
 
 > **Note**: See the [complete setup guide](./docs/PROJECT_SETUP.md) for detailed configuration instructions.
+
+## 🔒 Security & Environment Setup
+
+### Environment Variables
+- **Never commit `.env` files** - they contain sensitive API keys and secrets
+- **Use `.env.example` files** as templates for required environment variables
+- **All `.env*` files are automatically ignored** by git (see `.gitignore`)
+
+### Required Environment Files
+1. **Backend**: Copy `backend/env.example` to `backend/.env`
+2. **Frontend**: Copy `frontend/.env.local.example` to `frontend/.env.local`
+3. **Contracts**: Copy `contracts/env.example` to `contracts/.env`
+
+### Security Checklist
+- ✅ No hardcoded API keys or secrets in source code
+- ✅ All `.env` files properly ignored by git
+- ✅ Environment examples provided for all services
+- ✅ No sensitive files tracked in repository
+- ✅ Proper `.gitignore` configuration
+
+### Before Pushing to GitHub
+1. Ensure all `.env` files are created locally (not committed)
+2. Verify no sensitive data is in tracked files
+3. Test that the application works with your environment variables
+4. Review the security checklist above

@@ -419,6 +419,24 @@ export default function Home() {
           </div>
         </div>
 
+        {/* Navigation Menu */}
+        <div className="flex justify-center gap-4 mb-8">
+          <Button 
+            variant="outline" 
+            onClick={() => window.location.href = '/history'}
+            className="text-lg px-6 py-3"
+          >
+            🏆 Battle History
+          </Button>
+          <Button 
+            variant="outline" 
+            onClick={() => window.location.href = '/results'}
+            className="text-lg px-6 py-3"
+          >
+            📊 View Results
+          </Button>
+        </div>
+
         {error && (
           <Alert variant="destructive" className="mb-6">
             <AlertDescription>

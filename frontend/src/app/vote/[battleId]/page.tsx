@@ -663,6 +663,14 @@ export default function VotePage() {
                         Results verified on Monad testnet blockchain
                       </p>
                     </div>
+                    <div className="mt-4">
+                      <Button
+                        onClick={() => window.location.href = `/results/${battleId}`}
+                        className="bg-gradient-to-r from-yellow-500 to-orange-500 hover:from-yellow-600 hover:to-orange-600 text-white"
+                      >
+                        🏆 View Complete Results
+                      </Button>
+                    </div>
                   </div>
                 </div>
               )}
