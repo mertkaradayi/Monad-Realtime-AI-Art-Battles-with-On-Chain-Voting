@@ -519,19 +519,42 @@ export class BattleController {
    * Generate images for a battle (private method called asynchronously)
    */
   private static async generateImagesForBattle(battleId: string, participant1Prompt: string, participant2Prompt: string): Promise<void> {
+    const startTime = new Date().toISOString();
+    
     try {
       console.log(`Starting image generation for battle ${battleId}`);
       
+      // Update battle status to generating and set start timestamps
+      const { error: statusError } = await supabaseAdmin
+        .from('battles')
+        .update({
+          image_generation_status: 'generating',
+          participant1_generation_status: 'generating',
+          participant2_generation_status: 'generating',
+          participant1_generation_started_at: startTime,
+          participant2_generation_started_at: startTime
+        })
+        .eq('id', battleId);
+
+      if (statusError) {
+        throw statusError;
+      }
+      
       // Generate images using fal.ai
       const imageResults = await FalService.generateBattleImages(participant1Prompt, participant2Prompt);
+      const completedTime = new Date().toISOString();
       
-      // Update battle with image URLs
+      // Update battle with image URLs and completion status
       const { error: updateError } = await supabaseAdmin
         .from('battles')
         .update({
           participant1_image_url: imageResults.participant1ImageUrl,
           participant2_image_url: imageResults.participant2ImageUrl,
-          image_generation_status: 'completed'
+          image_generation_status: 'completed',
+          participant1_generation_status: 'completed',
+          participant2_generation_status: 'completed',
+          participant1_generation_completed_at: completedTime,
+          participant2_generation_completed_at: completedTime
         })
         .eq('id', battleId);
 
@@ -542,14 +565,163 @@ export class BattleController {
       console.log(`Successfully generated images for battle ${battleId}`);
     } catch (error) {
       console.error(`Failed to generate images for battle ${battleId}:`, error);
+      const failedTime = new Date().toISOString();
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
       
-      // Update battle status to failed
+      // Update battle status to failed for both participants
       await supabaseAdmin
         .from('battles')
-        .update({ image_generation_status: 'failed' })
+        .update({ 
+          image_generation_status: 'failed',
+          participant1_generation_status: 'failed',
+          participant2_generation_status: 'failed',
+          participant1_generation_error: errorMessage,
+          participant2_generation_error: errorMessage
+        })
         .eq('id', battleId);
       
       throw error;
+    }
+  }
+
+  /**
+   * Retry image generation for a specific participant
+   */
+  static async retryImageGeneration(req: Request, res: Response): Promise<void> {
+    try {
+      const { battleId } = req.params;
+      const { participant } = req.body; // 'participant1' or 'participant2'
+      const walletAddress = req.user?.wallet?.address;
+
+      if (!walletAddress) {
+        res.status(403).json({
+          success: false,
+          error: 'Wallet required',
+        });
+        return;
+      }
+
+      if (!participant || !['participant1', 'participant2'].includes(participant)) {
+        res.status(400).json({
+          success: false,
+          error: 'Invalid participant. Must be participant1 or participant2',
+        });
+        return;
+      }
+
+      // Get battle details
+      const { data: battle, error: fetchError } = await supabaseAdmin
+        .from('battles')
+        .select('*')
+        .eq('id', battleId)
+        .single();
+
+      if (fetchError || !battle) {
+        res.status(404).json({
+          success: false,
+          error: 'Battle not found',
+        });
+        return;
+      }
+
+      // Check if user is the battle creator
+      if (battle.creator_wallet !== walletAddress) {
+        res.status(403).json({
+          success: false,
+          error: 'Only battle creator can retry image generation',
+        });
+        return;
+      }
+
+      // Check if participant has a prompt
+      const promptField = participant === 'participant1' ? 'participant1_prompt' : 'participant2_prompt';
+      const prompt = battle[promptField];
+      
+      if (!prompt) {
+        res.status(400).json({
+          success: false,
+          error: `${participant} has no prompt to generate image from`,
+        });
+        return;
+      }
+
+      // Reset the specific participant's generation status
+      const statusField = `${participant}_generation_status`;
+      const startedAtField = `${participant}_generation_started_at`;
+      const completedAtField = `${participant}_generation_completed_at`;
+      const errorField = `${participant}_generation_error`;
+      const imageUrlField = `${participant}_image_url`;
+
+      const updateData: any = {
+        [statusField]: 'generating',
+        [startedAtField]: new Date().toISOString(),
+        [completedAtField]: null,
+        [errorField]: null
+      };
+
+      const { error: resetError } = await supabaseAdmin
+        .from('battles')
+        .update(updateData)
+        .eq('id', battleId);
+
+      if (resetError) {
+        throw resetError;
+      }
+
+      // Generate image for the specific participant
+      try {
+        const imageResult = await FalService.generateImage(prompt);
+        const completedTime = new Date().toISOString();
+
+        // Update with successful result
+        const { error: successError } = await supabaseAdmin
+          .from('battles')
+          .update({
+            [statusField]: 'completed',
+            [completedAtField]: completedTime,
+            [imageUrlField]: imageResult.imageUrl
+          })
+          .eq('id', battleId);
+
+        if (successError) {
+          throw successError;
+        }
+
+        res.json({
+          success: true,
+          data: {
+            participant,
+            imageUrl: imageResult.imageUrl,
+            status: 'completed'
+          }
+        });
+      } catch (generationError) {
+        const errorMessage = generationError instanceof Error ? generationError.message : 'Unknown error';
+        
+        // Update with error
+        await supabaseAdmin
+          .from('battles')
+          .update({
+            [statusField]: 'failed',
+            [errorField]: errorMessage
+          })
+          .eq('id', battleId);
+
+        res.status(500).json({
+          success: false,
+          error: 'Failed to generate image',
+          details: errorMessage
+        });
+      }
+    } catch (err) {
+      const error = err as Error;
+      console.error('Error retrying image generation:', error);
+      const includeDetails = config.server.nodeEnv !== 'production';
+      res.status(500).json({
+        success: false,
+        error: 'Failed to retry image generation',
+        ...(includeDetails ? { message: error.message } : {})
+      });
     }
   }
 }

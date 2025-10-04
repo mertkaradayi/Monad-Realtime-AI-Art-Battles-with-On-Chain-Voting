@@ -67,11 +67,11 @@
 - [x] **Demo UI**: Full-screen loading with progress indicators and battle concept display
 - [x] **Test**: Images generate successfully, URLs stored, concept is preserved
 
-#### **Host Dashboard Enhancements (Feature 5)**
-- [ ] Show per-participant generation status (Queued → Generating → Complete)
-- [ ] Visual progress indicators/spinners for each image job
-- [ ] Error state with retry control per participant
-- [ ] Timestamps for generation start/finish
+#### **Host Dashboard Enhancements (Feature 5)** ✅ **COMPLETED**
+- [x] Show per-participant generation status (Queued → Generating → Complete)
+- [x] Visual progress indicators/spinners for each image job
+- [x] Error state with retry control per participant
+- [x] Timestamps for generation start/finish
 
 ### **Feature 6: Image Display & Voting QR Generation** 🚧 **NEXT TO IMPLEMENT**
 - [ ] Show both generated images side by side (LARGE images - 600x600px minimum)

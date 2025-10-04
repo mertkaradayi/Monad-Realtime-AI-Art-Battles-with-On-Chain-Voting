@@ -50,7 +50,29 @@ export const auth = async (req: Request, res: Response, next: NextFunction) => {
       });
     }
 
-    const user = await privy.getUser(verifiedClaims.userId);
+    let user;
+    try {
+      user = await privy.getUser(verifiedClaims.userId);
+    } catch (error: any) {
+      // If user not found, return 401 to force re-authentication (don't log as error)
+      if (error.status === 404 || error.message?.includes('User not found')) {
+        // Only log in development mode to reduce noise
+        if (process.env.NODE_ENV === 'development') {
+          console.log('Authentication: User not found (likely stale token)');
+        }
+        return res.status(401).json({
+          success: false,
+          error: 'User not found - please re-authenticate'
+        });
+      }
+      
+      // For other errors, log and return 500
+      console.error('Authentication error:', error);
+      return res.status(500).json({
+        success: false,
+        error: 'Authentication service error'
+      });
+    }
     
     // Find the first wallet account from linkedAccounts
     const walletAccount = user.linkedAccounts?.find(

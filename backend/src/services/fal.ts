@@ -76,13 +76,78 @@ export class FalService {
   }
 
   /**
+   * Sanitize prompt to avoid content policy violations
+   */
+  private static sanitizePrompt(prompt: string): string {
+    // Remove potentially problematic words/phrases that might trigger content policy
+    const problematicTerms = [
+      'beautiful woman', 'beautiful girl', 'sexy', 'hot', 'attractive woman',
+      'nude', 'naked', 'explicit', 'adult', 'mature', 'sensual',
+      'violence', 'blood', 'gore', 'weapon', 'gun', 'knife',
+      'hate', 'discrimination', 'stereotype', 'offensive'
+    ];
+    
+    let sanitizedPrompt = prompt.toLowerCase();
+    
+    // Replace problematic terms with safer alternatives
+    const replacements: { [key: string]: string } = {
+      'beautiful woman': 'elegant person',
+      'beautiful girl': 'young person',
+      'sexy': 'stylish',
+      'hot': 'warm',
+      'attractive woman': 'elegant person',
+      'nude': 'clothed',
+      'naked': 'clothed',
+      'explicit': 'artistic',
+      'adult': 'mature',
+      'mature': 'experienced',
+      'sensual': 'artistic',
+      'violence': 'action',
+      'blood': 'red liquid',
+      'gore': 'dramatic',
+      'weapon': 'tool',
+      'gun': 'device',
+      'knife': 'blade',
+      'hate': 'dislike',
+      'discrimination': 'difference',
+      'stereotype': 'characteristic',
+      'offensive': 'bold'
+    };
+    
+    // Apply replacements
+    for (const [term, replacement] of Object.entries(replacements)) {
+      sanitizedPrompt = sanitizedPrompt.replace(new RegExp(term, 'gi'), replacement);
+    }
+    
+    // Remove any remaining problematic terms
+    for (const term of problematicTerms) {
+      sanitizedPrompt = sanitizedPrompt.replace(new RegExp(term, 'gi'), '');
+    }
+    
+    // Clean up extra spaces and ensure proper formatting
+    sanitizedPrompt = sanitizedPrompt.replace(/\s+/g, ' ').trim();
+    
+    // Ensure the prompt is not empty after sanitization
+    if (!sanitizedPrompt || sanitizedPrompt.length < 10) {
+      return 'A creative artistic scene with vibrant colors and interesting composition';
+    }
+    
+    return sanitizedPrompt;
+  }
+
+  /**
    * Generate image using fal.ai gemini-25-flash-image model
    */
   static async generateImage(prompt: string): Promise<{ imageUrl: string; requestId: string }> {
     try {
+      // Sanitize the prompt to avoid content policy violations
+      const sanitizedPrompt = this.sanitizePrompt(prompt);
+      console.log(`Original prompt: ${prompt}`);
+      console.log(`Sanitized prompt: ${sanitizedPrompt}`);
+      
       const result = await fal.subscribe('fal-ai/gemini-25-flash-image', {
         input: {
-          prompt: prompt
+          prompt: sanitizedPrompt
         },
         logs: true,
         onQueueUpdate: (update) => {
@@ -104,6 +169,23 @@ export class FalService {
       };
     } catch (error) {
       console.error('Fal.ai image generation error:', error);
+      
+      // Check if it's a content policy violation
+      if (error && typeof error === 'object' && 'status' in error && error.status === 422) {
+        const errorBody = (error as any).body;
+        if (errorBody && errorBody.detail) {
+          const isContentPolicyViolation = errorBody.detail.some((detail: any) => 
+            detail.type === 'content_policy_violation' || 
+            detail.msg?.toLowerCase().includes('content policy') ||
+            detail.msg?.toLowerCase().includes('safety')
+          );
+          
+          if (isContentPolicyViolation) {
+            throw new Error('Content policy violation: The prompt contains content that violates Fal.ai safety guidelines. Please try a different prompt.');
+          }
+        }
+      }
+      
       throw new Error(`Failed to generate image: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
   }

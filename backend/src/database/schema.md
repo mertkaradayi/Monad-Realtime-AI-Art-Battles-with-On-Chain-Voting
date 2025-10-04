@@ -17,6 +17,14 @@
 - **participant2_prompt**: TEXT (Optional, Nullable, "Full prompt submitted by second participant (concept + completion)")
 - **participant1_image_url**: TEXT (Optional, Nullable, "URL of the generated image for participant 1")
 - **participant2_image_url**: TEXT (Optional, Nullable, "URL of the generated image for participant 2")
+- **participant1_generation_status**: TEXT (Default: 'pending', Values: pending, generating, completed, failed, "Status of image generation for participant 1")
+- **participant2_generation_status**: TEXT (Default: 'pending', Values: pending, generating, completed, failed, "Status of image generation for participant 2")
+- **participant1_generation_started_at**: TIMESTAMPTZ (Optional, Nullable, "Timestamp when image generation started for participant 1")
+- **participant2_generation_started_at**: TIMESTAMPTZ (Optional, Nullable, "Timestamp when image generation started for participant 2")
+- **participant1_generation_completed_at**: TIMESTAMPTZ (Optional, Nullable, "Timestamp when image generation completed for participant 1")
+- **participant2_generation_completed_at**: TIMESTAMPTZ (Optional, Nullable, "Timestamp when image generation completed for participant 2")
+- **participant1_generation_error**: TEXT (Optional, Nullable, "Error message if image generation failed for participant 1")
+- **participant2_generation_error**: TEXT (Optional, Nullable, "Error message if image generation failed for participant 2")
 - **image_generation_status**: TEXT (Default: 'pending', Values: pending, generating, completed, failed, "Status of image generation process")
 - **total_votes**: INTEGER (Default: 0, "Total number of votes cast")
 - **winner_wallet**: VARCHAR(100) (Optional, Nullable, "Wallet address of winner")
@@ -104,6 +112,17 @@
 - These fields store the URLs of generated images for each participant
 - Enables image generation workflow using fal.ai gemini-25-flash-image model
 - Image generation triggers automatically when both prompts are submitted
+
+### 2025-01-03 - Per-Participant Generation Tracking (Feature 5 Host Dashboard Enhancements)
+- Added participant1_generation_status and participant2_generation_status columns
+- Added participant1_generation_started_at and participant2_generation_started_at timestamp columns
+- Added participant1_generation_completed_at and participant2_generation_completed_at timestamp columns
+- Added participant1_generation_error and participant2_generation_error columns for error tracking
+- Enables detailed per-participant image generation status tracking in host dashboard
+- Supports retry functionality for failed image generation per participant
+- Enhanced host dashboard shows: Queued → Generating → Complete status with visual indicators
+- Added retry buttons for failed image generation with error message display
+- Timestamps show generation start/finish times for each participant
 
 ## Notes
 - This schema is managed via Supabase MCP tools

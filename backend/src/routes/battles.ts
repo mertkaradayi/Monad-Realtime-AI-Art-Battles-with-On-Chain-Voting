@@ -22,4 +22,7 @@ router.post('/:id/join', ...authenticateWallet, BattleController.joinBattle);
 // Submit prompt for battle
 router.post('/:id/submit-prompt', ...authenticateWallet, BattleController.submitPrompt);
 
+// Retry image generation for a specific participant
+router.post('/:battleId/retry-image-generation', ...authenticateWallet, BattleController.retryImageGeneration);
+
 export default router;

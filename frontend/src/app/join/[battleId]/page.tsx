@@ -29,6 +29,14 @@ interface Battle {
   participant2_prompt: string | null
   participant1_image_url: string | null
   participant2_image_url: string | null
+  participant1_generation_status: string | null
+  participant2_generation_status: string | null
+  participant1_generation_started_at: string | null
+  participant2_generation_started_at: string | null
+  participant1_generation_completed_at: string | null
+  participant2_generation_completed_at: string | null
+  participant1_generation_error: string | null
+  participant2_generation_error: string | null
   image_generation_status: 'pending' | 'generating' | 'completed' | 'failed' | null
 }
 
@@ -133,7 +141,7 @@ export default function JoinBattlePage() {
   // Use coordinated polling hook
   const { isPolling } = useBattlePolling({
     battleId: battle?.id || null,
-    enabled: Boolean(battle && (battle.status === 'waiting' || battle.status === 'active' || battle.status === 'prompts_submitted')),
+    enabled: Boolean(battle && authenticated && (battle.status === 'waiting' || battle.status === 'active' || battle.status === 'prompts_submitted')),
     interval: 3000,
     onUpdate: () => fetchBattle(true)
   })
@@ -307,8 +315,18 @@ export default function JoinBattlePage() {
         setError(result.error || 'Battle not found')
       }
     } catch (err) {
-      console.error('Error fetching battle:', err)
-      setError('Failed to load battle details')
+      const error = err as Error;
+      if (error.message.includes('Authentication required') || error.message.includes('reconnect your wallet')) {
+        // Authentication error - redirect to login
+        setError('Authentication expired - please reconnect your wallet')
+        if (!silent) {
+          toast.error('Authentication expired - please reconnect your wallet')
+        }
+        return
+      } else {
+        console.error('Error fetching battle:', err)
+        setError('Failed to load battle details')
+      }
     } finally {
       if (!silent) setIsLoading(false)
     }
@@ -453,6 +471,30 @@ export default function JoinBattlePage() {
       }
     } finally {
       setIsSubmittingPrompt(false)
+    }
+  }
+
+  const handleRetryImageGeneration = async (participant: 'participant1' | 'participant2') => {
+    if (!battle) return
+
+    try {
+      setIsLoading(true)
+      toast.info(`Retrying image generation for ${participant}...`)
+
+      const result = await api.retryImageGeneration(battle.id, participant)
+      
+      if (result.success) {
+        toast.success(`Image generation retry successful for ${participant}!`)
+        // Refresh battle data to show updated status
+        await fetchBattle(true)
+      } else {
+        toast.error(`Failed to retry image generation for ${participant}`)
+      }
+    } catch (err) {
+      console.error('Error retrying image generation:', err)
+      toast.error('Failed to retry image generation, please try again')
+    } finally {
+      setIsLoading(false)
     }
   }
 
@@ -619,6 +661,63 @@ export default function JoinBattlePage() {
                               )}
                             </div>
                           )}
+
+                          {/* Image Generation Status */}
+                          {getParticipantPrompt(1) && (
+                            <div className="mt-3 space-y-2">
+                              <div className="text-sm font-medium text-blue-700">🎨 Image Generation:</div>
+                              {battle.participant1_generation_status === 'pending' && (
+                                <Badge variant="outline" className="text-yellow-600 border-yellow-600">
+                                  ⏳ Queued
+                                </Badge>
+                              )}
+                              {battle.participant1_generation_status === 'generating' && (
+                                <div className="flex items-center gap-2">
+                                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600"></div>
+                                  <Badge variant="outline" className="text-blue-600 border-blue-600">
+                                    🎨 Generating
+                                  </Badge>
+                                </div>
+                              )}
+                              {battle.participant1_generation_status === 'completed' && (
+                                <Badge variant="default" className="bg-green-600">
+                                  ✅ Complete
+                                </Badge>
+                              )}
+                              {battle.participant1_generation_status === 'failed' && (
+                                <div className="space-y-2">
+                                  <Badge variant="destructive">
+                                    ❌ Failed
+                                  </Badge>
+                                  {battle.participant1_generation_error && (
+                                    <p className="text-xs text-red-600">
+                                      {battle.participant1_generation_error}
+                                    </p>
+                                  )}
+                                  <Button
+                                    size="sm"
+                                    variant="outline"
+                                    className="text-xs"
+                                    onClick={() => handleRetryImageGeneration('participant1')}
+                                  >
+                                    🔄 Retry
+                                  </Button>
+                                </div>
+                              )}
+                              
+                              {/* Timestamps */}
+                              {battle.participant1_generation_started_at && (
+                                <div className="text-xs text-muted-foreground">
+                                  Started: {new Date(battle.participant1_generation_started_at).toLocaleTimeString()}
+                                </div>
+                              )}
+                              {battle.participant1_generation_completed_at && (
+                                <div className="text-xs text-muted-foreground">
+                                  Completed: {new Date(battle.participant1_generation_completed_at).toLocaleTimeString()}
+                                </div>
+                              )}
+                            </div>
+                          )}
                         </div>
                       </CardContent>
                     </Card>
@@ -665,6 +764,63 @@ export default function JoinBattlePage() {
                                   <p className="text-sm text-foreground">
                                     &ldquo;{truncatePrompt(getParticipantPrompt(2)!, 80)}&rdquo;
                                   </p>
+                                </div>
+                              )}
+                            </div>
+                          )}
+
+                          {/* Image Generation Status */}
+                          {getParticipantPrompt(2) && (
+                            <div className="mt-3 space-y-2">
+                              <div className="text-sm font-medium text-blue-700">🎨 Image Generation:</div>
+                              {battle.participant2_generation_status === 'pending' && (
+                                <Badge variant="outline" className="text-yellow-600 border-yellow-600">
+                                  ⏳ Queued
+                                </Badge>
+                              )}
+                              {battle.participant2_generation_status === 'generating' && (
+                                <div className="flex items-center gap-2">
+                                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600"></div>
+                                  <Badge variant="outline" className="text-blue-600 border-blue-600">
+                                    🎨 Generating
+                                  </Badge>
+                                </div>
+                              )}
+                              {battle.participant2_generation_status === 'completed' && (
+                                <Badge variant="default" className="bg-green-600">
+                                  ✅ Complete
+                                </Badge>
+                              )}
+                              {battle.participant2_generation_status === 'failed' && (
+                                <div className="space-y-2">
+                                  <Badge variant="destructive">
+                                    ❌ Failed
+                                  </Badge>
+                                  {battle.participant2_generation_error && (
+                                    <p className="text-xs text-red-600">
+                                      {battle.participant2_generation_error}
+                                    </p>
+                                  )}
+                                  <Button
+                                    size="sm"
+                                    variant="outline"
+                                    className="text-xs"
+                                    onClick={() => handleRetryImageGeneration('participant2')}
+                                  >
+                                    🔄 Retry
+                                  </Button>
+                                </div>
+                              )}
+                              
+                              {/* Timestamps */}
+                              {battle.participant2_generation_started_at && (
+                                <div className="text-xs text-muted-foreground">
+                                  Started: {new Date(battle.participant2_generation_started_at).toLocaleTimeString()}
+                                </div>
+                              )}
+                              {battle.participant2_generation_completed_at && (
+                                <div className="text-xs text-muted-foreground">
+                                  Completed: {new Date(battle.participant2_generation_completed_at).toLocaleTimeString()}
                                 </div>
                               )}
                             </div>

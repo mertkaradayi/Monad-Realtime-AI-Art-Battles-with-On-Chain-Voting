@@ -28,6 +28,19 @@ export const getAuthHeaders = async () => {
   }
 };
 
+// Helper function to handle API responses with authentication error handling
+const handleApiResponse = async (response: Response) => {
+  if (!response.ok) {
+    if (response.status === 401) {
+      // Authentication error - force re-authentication
+      console.error('Authentication failed, user may need to re-authenticate');
+      throw new Error('Authentication required - please reconnect your wallet');
+    }
+    throw new Error(`HTTP error! status: ${response.status}`);
+  }
+  return response.json();
+};
+
 // Battle API functions with authentication
 export const api = {
   // Create a new battle
@@ -38,11 +51,7 @@ export const api = {
       headers,
     });
     
-    if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
-    }
-    
-    return response.json();
+    return handleApiResponse(response);
   },
 
   // Get all battles
@@ -53,11 +62,7 @@ export const api = {
       headers,
     });
     
-    if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
-    }
-    
-    return response.json();
+    return handleApiResponse(response);
   },
 
   // Get battles created by current user
@@ -68,11 +73,7 @@ export const api = {
       headers,
     });
     
-    if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
-    }
-    
-    return response.json();
+    return handleApiResponse(response);
   },
 
   // Get battle by ID
@@ -83,11 +84,7 @@ export const api = {
       headers,
     });
     
-    if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
-    }
-    
-    return response.json();
+    return handleApiResponse(response);
   },
 
   // Join battle
@@ -98,11 +95,7 @@ export const api = {
       headers,
     });
     
-    if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
-    }
-    
-    return response.json();
+    return handleApiResponse(response);
   },
 
   // Submit prompt for battle
@@ -114,10 +107,18 @@ export const api = {
       body: JSON.stringify({ promptCompletion }),
     });
     
-    if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
-    }
+    return handleApiResponse(response);
+  },
+
+  // Retry image generation for a specific participant
+  async retryImageGeneration(battleId: string, participant: 'participant1' | 'participant2') {
+    const headers = await getAuthHeaders();
+    const response = await fetch(buildUrl(`/api/battles/${battleId}/retry-image-generation`), {
+      method: 'POST',
+      headers,
+      body: JSON.stringify({ participant }),
+    });
     
-    return response.json();
+    return handleApiResponse(response);
   },
 };

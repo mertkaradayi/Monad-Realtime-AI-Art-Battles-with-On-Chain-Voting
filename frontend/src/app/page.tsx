@@ -22,6 +22,19 @@ interface Battle {
   creator_wallet: string
   participant1_wallet: string | null
   participant2_wallet: string | null
+  participant1_prompt: string | null
+  participant2_prompt: string | null
+  participant1_image_url: string | null
+  participant2_image_url: string | null
+  participant1_generation_status: string | null
+  participant2_generation_status: string | null
+  participant1_generation_started_at: string | null
+  participant2_generation_started_at: string | null
+  participant1_generation_completed_at: string | null
+  participant2_generation_completed_at: string | null
+  participant1_generation_error: string | null
+  participant2_generation_error: string | null
+  image_generation_status: string | null
   joining_qr_data: string | null
   joiningQR?: string
 }
@@ -134,7 +147,7 @@ export default function Home() {
   // Use coordinated polling hook
   const { isPolling } = useBattlePolling({
     battleId: battle?.id || null,
-    enabled: Boolean(battle && isBattleCreator() && (battle.status === 'waiting' || battle.status === 'active' || battle.status === 'prompts_submitted')),
+    enabled: Boolean(battle && isBattleCreator() && authenticated && (battle.status === 'waiting' || battle.status === 'active' || battle.status === 'prompts_submitted')),
     interval: 3000,
     onUpdate: () => fetchBattleStatus(true)
   })
@@ -190,7 +203,22 @@ export default function Home() {
         })
       }
     } catch (err) {
-      console.error('Error fetching battle status:', err)
+      const error = err as Error;
+      if (error.message.includes('Authentication required') || error.message.includes('reconnect your wallet')) {
+        // Authentication error - stop polling and clear battle state
+        setError('Authentication expired - please reconnect your wallet')
+        setBattle(null)
+        if (!silent) {
+          toast.error('Authentication expired - please reconnect your wallet')
+        }
+        return
+      } else {
+        console.error('Error fetching battle status:', err)
+        if (!silent) {
+          setError('Failed to fetch battle status')
+          toast.error('Failed to fetch battle status, please try again')
+        }
+      }
     } finally {
       if (!silent) setIsLoading(false)
     }
@@ -228,6 +256,30 @@ export default function Home() {
         console.error('Error creating battle:', err)
         toast.error('Failed to create battle, please try again')
       }
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
+  const handleRetryImageGeneration = async (participant: 'participant1' | 'participant2') => {
+    if (!battle) return
+
+    try {
+      setIsLoading(true)
+      toast.info(`Retrying image generation for ${participant}...`)
+
+      const result = await api.retryImageGeneration(battle.id, participant)
+      
+      if (result.success) {
+        toast.success(`Image generation retry successful for ${participant}!`)
+        // Refresh battle data to show updated status
+        await fetchBattleStatus()
+      } else {
+        toast.error(`Failed to retry image generation for ${participant}`)
+      }
+    } catch (err) {
+      console.error('Error retrying image generation:', err)
+      toast.error('Failed to retry image generation, please try again')
     } finally {
       setIsLoading(false)
     }
@@ -444,10 +496,78 @@ export default function Home() {
                                 }
                               </p>
                             </div>
+                            
+                            {/* Join Status */}
                             {battle.participant1_wallet && (
                               <Badge variant="default" className="bg-green-600">
                                 ✅ Joined
                               </Badge>
+                            )}
+
+                            {/* Prompt Status */}
+                            {battle.participant1_wallet && (
+                              <div className="mt-2">
+                                <Badge variant={battle.participant1_prompt ? "default" : "outline"} 
+                                       className={battle.participant1_prompt ? "bg-blue-600" : ""}>
+                                  {battle.participant1_prompt ? "📝 Prompt Submitted" : "⏳ Waiting for Prompt"}
+                                </Badge>
+                              </div>
+                            )}
+
+                            {/* Image Generation Status */}
+                            {battle.participant1_prompt && (
+                              <div className="mt-2">
+                                {battle.participant1_generation_status === 'pending' && (
+                                  <Badge variant="outline" className="text-yellow-600 border-yellow-600">
+                                    ⏳ Queued
+                                  </Badge>
+                                )}
+                                {battle.participant1_generation_status === 'generating' && (
+                                  <div className="flex items-center justify-center gap-2">
+                                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600"></div>
+                                    <Badge variant="outline" className="text-blue-600 border-blue-600">
+                                      🎨 Generating
+                                    </Badge>
+                                  </div>
+                                )}
+                                {battle.participant1_generation_status === 'completed' && (
+                                  <Badge variant="default" className="bg-green-600">
+                                    ✅ Complete
+                                  </Badge>
+                                )}
+                                {battle.participant1_generation_status === 'failed' && (
+                                  <div className="space-y-2">
+                                    <Badge variant="destructive">
+                                      ❌ Failed
+                                    </Badge>
+                                    {battle.participant1_generation_error && (
+                                      <p className="text-xs text-red-600">
+                                        {battle.participant1_generation_error}
+                                      </p>
+                                    )}
+                                    <Button
+                                      size="sm"
+                                      variant="outline"
+                                      className="text-xs"
+                                      onClick={() => handleRetryImageGeneration('participant1')}
+                                    >
+                                      🔄 Retry
+                                    </Button>
+                                  </div>
+                                )}
+                              </div>
+                            )}
+
+                            {/* Timestamps */}
+                            {battle.participant1_generation_started_at && (
+                              <div className="text-xs text-muted-foreground">
+                                Started: {new Date(battle.participant1_generation_started_at).toLocaleTimeString()}
+                              </div>
+                            )}
+                            {battle.participant1_generation_completed_at && (
+                              <div className="text-xs text-muted-foreground">
+                                Completed: {new Date(battle.participant1_generation_completed_at).toLocaleTimeString()}
+                              </div>
                             )}
                           </div>
                         </CardContent>
@@ -471,10 +591,78 @@ export default function Home() {
                                 }
                               </p>
                             </div>
+                            
+                            {/* Join Status */}
                             {battle.participant2_wallet && (
                               <Badge variant="default" className="bg-green-600">
                                 ✅ Joined
                               </Badge>
+                            )}
+
+                            {/* Prompt Status */}
+                            {battle.participant2_wallet && (
+                              <div className="mt-2">
+                                <Badge variant={battle.participant2_prompt ? "default" : "outline"} 
+                                       className={battle.participant2_prompt ? "bg-blue-600" : ""}>
+                                  {battle.participant2_prompt ? "📝 Prompt Submitted" : "⏳ Waiting for Prompt"}
+                                </Badge>
+                              </div>
+                            )}
+
+                            {/* Image Generation Status */}
+                            {battle.participant2_prompt && (
+                              <div className="mt-2">
+                                {battle.participant2_generation_status === 'pending' && (
+                                  <Badge variant="outline" className="text-yellow-600 border-yellow-600">
+                                    ⏳ Queued
+                                  </Badge>
+                                )}
+                                {battle.participant2_generation_status === 'generating' && (
+                                  <div className="flex items-center justify-center gap-2">
+                                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600"></div>
+                                    <Badge variant="outline" className="text-blue-600 border-blue-600">
+                                      🎨 Generating
+                                    </Badge>
+                                  </div>
+                                )}
+                                {battle.participant2_generation_status === 'completed' && (
+                                  <Badge variant="default" className="bg-green-600">
+                                    ✅ Complete
+                                  </Badge>
+                                )}
+                                {battle.participant2_generation_status === 'failed' && (
+                                  <div className="space-y-2">
+                                    <Badge variant="destructive">
+                                      ❌ Failed
+                                    </Badge>
+                                    {battle.participant2_generation_error && (
+                                      <p className="text-xs text-red-600">
+                                        {battle.participant2_generation_error}
+                                      </p>
+                                    )}
+                                    <Button
+                                      size="sm"
+                                      variant="outline"
+                                      className="text-xs"
+                                      onClick={() => handleRetryImageGeneration('participant2')}
+                                    >
+                                      🔄 Retry
+                                    </Button>
+                                  </div>
+                                )}
+                              </div>
+                            )}
+
+                            {/* Timestamps */}
+                            {battle.participant2_generation_started_at && (
+                              <div className="text-xs text-muted-foreground">
+                                Started: {new Date(battle.participant2_generation_started_at).toLocaleTimeString()}
+                              </div>
+                            )}
+                            {battle.participant2_generation_completed_at && (
+                              <div className="text-xs text-muted-foreground">
+                                Completed: {new Date(battle.participant2_generation_completed_at).toLocaleTimeString()}
+                              </div>
                             )}
                           </div>
                         </CardContent>

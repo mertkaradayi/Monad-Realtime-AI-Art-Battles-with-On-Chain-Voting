@@ -23,9 +23,17 @@ export type Database = {
           id: string
           image_generation_status: string | null
           joining_qr_data: string | null
+          participant1_generation_completed_at: string | null
+          participant1_generation_error: string | null
+          participant1_generation_started_at: string | null
+          participant1_generation_status: string | null
           participant1_image_url: string | null
           participant1_prompt: string | null
           participant1_wallet: string | null
+          participant2_generation_completed_at: string | null
+          participant2_generation_error: string | null
+          participant2_generation_started_at: string | null
+          participant2_generation_status: string | null
           participant2_image_url: string | null
           participant2_prompt: string | null
           participant2_wallet: string | null
@@ -43,9 +51,17 @@ export type Database = {
           id?: string
           image_generation_status?: string | null
           joining_qr_data?: string | null
+          participant1_generation_completed_at?: string | null
+          participant1_generation_error?: string | null
+          participant1_generation_started_at?: string | null
+          participant1_generation_status?: string | null
           participant1_image_url?: string | null
           participant1_prompt?: string | null
           participant1_wallet?: string | null
+          participant2_generation_completed_at?: string | null
+          participant2_generation_error?: string | null
+          participant2_generation_started_at?: string | null
+          participant2_generation_status?: string | null
           participant2_image_url?: string | null
           participant2_prompt?: string | null
           participant2_wallet?: string | null
@@ -63,9 +79,17 @@ export type Database = {
           id?: string
           image_generation_status?: string | null
           joining_qr_data?: string | null
+          participant1_generation_completed_at?: string | null
+          participant1_generation_error?: string | null
+          participant1_generation_started_at?: string | null
+          participant1_generation_status?: string | null
           participant1_image_url?: string | null
           participant1_prompt?: string | null
           participant1_wallet?: string | null
+          participant2_generation_completed_at?: string | null
+          participant2_generation_error?: string | null
+          participant2_generation_started_at?: string | null
+          participant2_generation_status?: string | null
           participant2_image_url?: string | null
           participant2_prompt?: string | null
           participant2_wallet?: string | null
@@ -208,11 +232,11 @@ export type CompositeTypes<
   }
     ? keyof DatabaseWithoutInternals[PublicCompositeTypeNameOrOptions["schema"]]["CompositeTypes"]
     : never = never,
-> = PublicCompositeTypeNameOrOptions extends {
+> = DefaultSchemaTableNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
   ? DatabaseWithoutInternals[PublicCompositeTypeNameOrOptions["schema"]]["CompositeTypes"][CompositeTypeName]
-  : PublicCompositeTypeNameOrOptions extends keyof DefaultSchema["CompositeTypes"]
+  : DefaultSchemaTableNameOrOptions extends keyof DefaultSchema["CompositeTypes"]
     ? DefaultSchema["CompositeTypes"][PublicCompositeTypeNameOrOptions]
     : never
 
