@@ -208,13 +208,59 @@ contract BattleVoting {
 
         battle.isActive = false;
 
-        // Determine winner
+        // Determine winner with enhanced logic
         if (battle.participant1Votes > battle.participant2Votes) {
             battle.winner = battle.participant1;
         } else if (battle.participant2Votes > battle.participant1Votes) {
             battle.winner = battle.participant2;
+        } else {
+            // Tie-break: Use block timestamp as random seed for deterministic tie-breaking
+            // This ensures the same result every time for the same block
+            if (block.timestamp % 2 == 0) {
+                battle.winner = battle.participant1;
+            } else {
+                battle.winner = battle.participant2;
+            }
         }
-        // If votes are equal, winner remains address(0) - tie
+
+        emit BattleCompleted(
+            battleId,
+            battle.winner,
+            battle.participant1Votes,
+            battle.participant2Votes
+        );
+    }
+
+    /**
+     * @dev Auto-complete battle when 120-second timer expires (anyone can call)
+     * @param battleId Battle identifier
+     */
+    function autoCompleteBattle(string memory battleId) 
+        external 
+        battleExists(battleId)
+    {
+        Battle storage battle = battles[battleId];
+        require(battle.isActive, "Battle is not active");
+        require(
+            block.timestamp > battle.votingEndTime,
+            "Voting period has not ended yet"
+        );
+
+        battle.isActive = false;
+
+        // Determine winner with enhanced logic
+        if (battle.participant1Votes > battle.participant2Votes) {
+            battle.winner = battle.participant1;
+        } else if (battle.participant2Votes > battle.participant1Votes) {
+            battle.winner = battle.participant2;
+        } else {
+            // Tie-break: Use block timestamp as random seed for deterministic tie-breaking
+            if (block.timestamp % 2 == 0) {
+                battle.winner = battle.participant1;
+            } else {
+                battle.winner = battle.participant2;
+            }
+        }
 
         emit BattleCompleted(
             battleId,
@@ -327,5 +373,52 @@ contract BattleVoting {
             return 0;
         }
         return battle.votingEndTime - block.timestamp;
+    }
+
+    /**
+     * @dev Get winner information for a battle
+     * @param battleId Battle identifier
+     * @return winner Winner address (address(0) if no winner or tie)
+     * @return participant1Votes Final vote count for participant 1
+     * @return participant2Votes Final vote count for participant 2
+     * @return isCompleted Whether the battle is completed
+     */
+    function getWinnerInfo(string memory battleId) 
+        external 
+        view 
+        battleExists(battleId)
+        returns (address winner, uint256 participant1Votes, uint256 participant2Votes, bool isCompleted)
+    {
+        Battle memory battle = battles[battleId];
+        return (
+            battle.winner,
+            battle.participant1Votes,
+            battle.participant2Votes,
+            !battle.isActive
+        );
+    }
+
+    /**
+     * @dev Check if battle can be auto-completed (120-second timer expired)
+     * @param battleId Battle identifier
+     * @return canAutoComplete Whether the battle can be auto-completed
+     * @return timeRemaining Time remaining until auto-completion (0 if ready)
+     */
+    function canAutoComplete(string memory battleId) 
+        external 
+        view 
+        battleExists(battleId)
+        returns (bool, uint256)
+    {
+        Battle memory battle = battles[battleId];
+        if (!battle.isActive) {
+            return (false, 0);
+        }
+        
+        if (block.timestamp >= battle.votingEndTime) {
+            return (true, 0);
+        }
+        
+        return (false, battle.votingEndTime - block.timestamp);
     }
 }

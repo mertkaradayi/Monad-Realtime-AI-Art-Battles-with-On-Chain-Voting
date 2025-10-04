@@ -9,40 +9,72 @@ import {
   waitForTransaction,
   parseContractError,
   type BattleInfo,
-  type VoteInfo
+  type VoteInfo,
+  type WinnerInfo,
+  type AutoCompleteInfo
 } from '@/lib/contracts';
 
 // Hook for contract interactions
 export const useContract = (contractAddress: string) => {
-  const { user } = usePrivy();
+  const { user, getAccessToken } = usePrivy();
   const queryClient = useQueryClient();
   
   const provider = createProvider();
-  const contract = new BattleVotingContract(contractAddress, provider);
+  
+  // Only create contract if we have a valid address
+  const contract = React.useMemo(() => {
+    if (!contractAddress || contractAddress.trim() === '') {
+      return null;
+    }
+    return new BattleVotingContract(contractAddress, provider);
+  }, [contractAddress, provider]);
 
   // Set up signer if user is connected
-  if (user?.wallet?.address) {
-    // For now, we'll use the provider as signer
-    // In a real implementation, you'd get the signer from Privy
-    contract.setSigner(provider as any);
-  }
+  React.useEffect(() => {
+    const setupSigner = async () => {
+      if (user?.wallet?.address && contractAddress && contract) {
+        try {
+          // Get the Privy wallet signer
+          const privyWallet = user.wallet;
+          
+          // Create a proper signer from Privy wallet
+          if (privyWallet && (privyWallet as any).ethereum) {
+            // Create signer from ethereum provider
+            const ethersProvider = new ethers.BrowserProvider((privyWallet as any).ethereum);
+            const signer = await ethersProvider.getSigner();
+            contract.setSigner(signer);
+          }
+        } catch (error) {
+          console.error('Failed to setup wallet signer:', error);
+        }
+      }
+    };
+
+    setupSigner();
+  }, [user?.wallet?.address, contractAddress, contract]);
 
   return {
     contract,
     provider,
     isConnected: !!user?.wallet?.address,
-    userAddress: user?.wallet?.address
+    userAddress: user?.wallet?.address,
+    isContractReady: !!contract
   };
 };
 
 // Hook for fetching battle information
 export const useBattleInfo = (contractAddress: string, battleId: string) => {
-  const { contract } = useContract(contractAddress);
+  const { contract, isContractReady } = useContract(contractAddress);
 
   return useQuery({
     queryKey: ['battleInfo', contractAddress, battleId],
-    queryFn: () => contract.getBattle(battleId),
-    enabled: !!contractAddress && !!battleId,
+    queryFn: () => {
+      if (!contract) {
+        throw new Error('Contract not ready');
+      }
+      return contract.getBattle(battleId);
+    },
+    enabled: !!contractAddress && !!battleId && isContractReady,
     refetchInterval: 3000, // Poll every 3 seconds
     staleTime: 1000,
   });
@@ -50,12 +82,17 @@ export const useBattleInfo = (contractAddress: string, battleId: string) => {
 
 // Hook for checking if user has voted
 export const useHasVoted = (contractAddress: string, battleId: string, userAddress?: string) => {
-  const { contract } = useContract(contractAddress);
+  const { contract, isContractReady } = useContract(contractAddress);
 
   return useQuery({
     queryKey: ['hasVoted', contractAddress, battleId, userAddress],
-    queryFn: () => contract.hasVoterVoted(battleId, userAddress!),
-    enabled: !!contractAddress && !!battleId && !!userAddress,
+    queryFn: () => {
+      if (!contract) {
+        throw new Error('Contract not ready');
+      }
+      return contract.hasVoterVoted(battleId, userAddress!);
+    },
+    enabled: !!contractAddress && !!battleId && !!userAddress && isContractReady,
     refetchInterval: 5000, // Poll every 5 seconds
     staleTime: 2000,
   });
@@ -63,11 +100,15 @@ export const useHasVoted = (contractAddress: string, battleId: string, userAddre
 
 // Hook for checking voting status with 45-second countdown
 export const useVotingStatus = (contractAddress: string, battleId: string) => {
-  const { contract } = useContract(contractAddress);
+  const { contract, isContractReady } = useContract(contractAddress);
 
   return useQuery({
     queryKey: ['votingStatus', contractAddress, battleId],
     queryFn: async () => {
+      if (!contract) {
+        throw new Error('Contract not ready');
+      }
+      
       const [isActive, timeRemaining] = await Promise.all([
         contract.isVotingActive(battleId),
         contract.getVotingTimeRemaining(battleId)
@@ -87,7 +128,7 @@ export const useVotingStatus = (contractAddress: string, battleId: string) => {
         votingEnded: !votingIsActive && countdownTime === 0
       };
     },
-    enabled: !!contractAddress && !!battleId,
+    enabled: !!contractAddress && !!battleId && isContractReady,
     refetchInterval: 1000, // Poll every 1 second for countdown
     staleTime: 500,
   });
@@ -95,12 +136,17 @@ export const useVotingStatus = (contractAddress: string, battleId: string) => {
 
 // Hook for fetching battle votes
 export const useBattleVotes = (contractAddress: string, battleId: string) => {
-  const { contract } = useContract(contractAddress);
+  const { contract, isContractReady } = useContract(contractAddress);
 
   return useQuery({
     queryKey: ['battleVotes', contractAddress, battleId],
-    queryFn: () => contract.getBattleVotes(battleId),
-    enabled: !!contractAddress && !!battleId,
+    queryFn: () => {
+      if (!contract) {
+        throw new Error('Contract not ready');
+      }
+      return contract.getBattleVotes(battleId);
+    },
+    enabled: !!contractAddress && !!battleId && isContractReady,
     refetchInterval: 3000, // Poll every 3 seconds
     staleTime: 1000,
   });
@@ -108,13 +154,17 @@ export const useBattleVotes = (contractAddress: string, battleId: string) => {
 
 // Hook for casting votes
 export const useCastVote = (contractAddress: string, battleId: string) => {
-  const { contract, isConnected, userAddress } = useContract(contractAddress);
+  const { contract, isConnected, userAddress, isContractReady } = useContract(contractAddress);
   const queryClient = useQueryClient();
 
   return useMutation({
     mutationFn: async (participantAddress: string) => {
       if (!isConnected || !userAddress) {
         throw new Error('Wallet not connected');
+      }
+
+      if (!contract || !isContractReady) {
+        throw new Error('Contract not ready');
       }
 
       // Estimate gas first
@@ -146,13 +196,17 @@ export const useCastVote = (contractAddress: string, battleId: string) => {
 
 // Hook for completing battles
 export const useCompleteBattle = (contractAddress: string, battleId: string) => {
-  const { contract, isConnected } = useContract(contractAddress);
+  const { contract, isConnected, isContractReady } = useContract(contractAddress);
   const queryClient = useQueryClient();
 
   return useMutation({
     mutationFn: async () => {
       if (!isConnected) {
         throw new Error('Wallet not connected');
+      }
+
+      if (!contract || !isContractReady) {
+        throw new Error('Contract not ready');
       }
 
       const tx = await contract.completeBattle(battleId);
@@ -194,15 +248,92 @@ export const useAutoCompleteBattle = (contractAddress: string, battleId: string)
   return completeBattleMutation;
 };
 
+// Hook for auto-completing battle using the new autoCompleteBattle function (Feature 9)
+export const useAutoCompleteBattleV2 = (contractAddress: string, battleId: string) => {
+  const { contract, isConnected, isContractReady } = useContract(contractAddress);
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async () => {
+      if (!isConnected) {
+        throw new Error('Wallet not connected');
+      }
+
+      if (!contract || !isContractReady) {
+        throw new Error('Contract not ready');
+      }
+
+      const tx = await contract.autoCompleteBattle(battleId);
+      const receipt = await waitForTransaction(tx, 1);
+      
+      return {
+        transactionHash: receipt.hash,
+        blockNumber: receipt.blockNumber,
+        gasUsed: receipt.gasUsed
+      };
+    },
+    onSuccess: () => {
+      // Invalidate and refetch battle info
+      queryClient.invalidateQueries({ queryKey: ['battleInfo', contractAddress, battleId] });
+      queryClient.invalidateQueries({ queryKey: ['votingStatus', contractAddress, battleId] });
+      queryClient.invalidateQueries({ queryKey: ['winnerInfo', contractAddress, battleId] });
+      queryClient.invalidateQueries({ queryKey: ['canAutoComplete', contractAddress, battleId] });
+    },
+    onError: (error) => {
+      console.error('Auto-complete battle failed:', error);
+    }
+  });
+};
+
+// Hook for getting winner information (Feature 9)
+export const useWinnerInfo = (contractAddress: string, battleId: string) => {
+  const { contract, isContractReady } = useContract(contractAddress);
+
+  return useQuery({
+    queryKey: ['winnerInfo', contractAddress, battleId],
+    queryFn: () => {
+      if (!contract) {
+        throw new Error('Contract not ready');
+      }
+      return contract.getWinnerInfo(battleId);
+    },
+    enabled: !!contractAddress && !!battleId && isContractReady,
+    refetchInterval: 3000, // Poll every 3 seconds
+    staleTime: 1000,
+  });
+};
+
+// Hook for checking if battle can be auto-completed (Feature 9)
+export const useCanAutoComplete = (contractAddress: string, battleId: string) => {
+  const { contract, isContractReady } = useContract(contractAddress);
+
+  return useQuery({
+    queryKey: ['canAutoComplete', contractAddress, battleId],
+    queryFn: () => {
+      if (!contract) {
+        throw new Error('Contract not ready');
+      }
+      return contract.canAutoComplete(battleId);
+    },
+    enabled: !!contractAddress && !!battleId && isContractReady,
+    refetchInterval: 1000, // Poll every 1 second for real-time updates
+    staleTime: 500,
+  });
+};
+
 // Hook for extending voting period
 export const useExtendVoting = (contractAddress: string, battleId: string) => {
-  const { contract, isConnected } = useContract(contractAddress);
+  const { contract, isConnected, isContractReady } = useContract(contractAddress);
   const queryClient = useQueryClient();
 
   return useMutation({
     mutationFn: async (additionalTime: number) => {
       if (!isConnected) {
         throw new Error('Wallet not connected');
+      }
+
+      if (!contract || !isContractReady) {
+        throw new Error('Contract not ready');
       }
 
       const tx = await contract.extendVoting(battleId, additionalTime);
@@ -242,12 +373,17 @@ export const useVoteCounts = (contractAddress: string, battleId: string) => {
 
 // Hook for gas estimation
 export const useGasEstimation = (contractAddress: string, battleId: string, participantAddress: string) => {
-  const { contract } = useContract(contractAddress);
+  const { contract, isContractReady } = useContract(contractAddress);
 
   return useQuery({
     queryKey: ['gasEstimation', contractAddress, battleId, participantAddress],
-    queryFn: () => estimateGasForVote(contract, battleId, participantAddress),
-    enabled: !!contractAddress && !!battleId && !!participantAddress,
+    queryFn: () => {
+      if (!contract) {
+        throw new Error('Contract not ready');
+      }
+      return estimateGasForVote(contract, battleId, participantAddress);
+    },
+    enabled: !!contractAddress && !!battleId && !!participantAddress && isContractReady,
     staleTime: 30000, // Gas estimates are valid for 30 seconds
   });
 };
@@ -255,58 +391,76 @@ export const useGasEstimation = (contractAddress: string, battleId: string, part
 // Hook for real-time vote counting after voting ends
 export const useRealTimeVoteCounting = (contractAddress: string, battleId: string) => {
   const { data: votingStatus } = useVotingStatus(contractAddress, battleId);
-  const { data: battleInfo, isLoading, error } = useBattleInfo(contractAddress, battleId);
+  const { contract, isContractReady } = useContract(contractAddress);
 
   // Increase polling frequency after voting ends for real-time counting
   const shouldPollFrequently = votingStatus?.votingEnded || false;
 
   return useQuery({
     queryKey: ['realTimeVoteCounts', contractAddress, battleId],
-    queryFn: () => battleInfo,
-    enabled: !!contractAddress && !!battleId && shouldPollFrequently,
+    queryFn: async () => {
+      if (!contract) {
+        throw new Error('Contract not ready');
+      }
+      
+      // Actually call the contract to get fresh data
+      const battleInfo = await contract.getBattle(battleId);
+      return {
+        participant1Votes: battleInfo.participant1Votes || 0,
+        participant2Votes: battleInfo.participant2Votes || 0,
+        totalVotes: battleInfo.totalVotes || 0,
+        winner: battleInfo.winner,
+        isActive: battleInfo.isActive,
+        votingEnded: !battleInfo.isActive
+      };
+    },
+    enabled: !!contractAddress && !!battleId && isContractReady && shouldPollFrequently,
     refetchInterval: shouldPollFrequently ? 2000 : false, // Poll every 2 seconds after voting ends
     staleTime: 1000,
-    select: (data) => ({
-      participant1Votes: data?.participant1Votes || 0,
-      participant2Votes: data?.participant2Votes || 0,
-      totalVotes: data?.totalVotes || 0,
-      winner: data?.winner,
-      isActive: data?.isActive,
-      votingEnded: !data?.isActive
-    })
   });
 };
 
 // Hook for high-frequency vote counting during active voting (Feature 8)
 export const useHighFrequencyVoteCounting = (contractAddress: string, battleId: string) => {
   const { data: votingStatus } = useVotingStatus(contractAddress, battleId);
-  const { data: battleInfo, isLoading, error } = useBattleInfo(contractAddress, battleId);
+  const { contract, isContractReady } = useContract(contractAddress);
 
   // High-frequency polling during active voting for real-time updates
   const isVotingActive = votingStatus?.isActive && !votingStatus?.votingEnded;
 
   return useQuery({
     queryKey: ['highFrequencyVoteCounts', contractAddress, battleId],
-    queryFn: () => battleInfo,
-    enabled: !!contractAddress && !!battleId && isVotingActive,
+    queryFn: async () => {
+      if (!contract) {
+        throw new Error('Contract not ready');
+      }
+      
+      // Actually call the contract to get fresh data
+      const battleInfo = await contract.getBattle(battleId);
+      return {
+        participant1Votes: battleInfo.participant1Votes || 0,
+        participant2Votes: battleInfo.participant2Votes || 0,
+        totalVotes: battleInfo.totalVotes || 0,
+        isActive: battleInfo.isActive,
+        lastUpdated: Date.now()
+      };
+    },
+    enabled: !!contractAddress && !!battleId && isContractReady && isVotingActive,
     refetchInterval: isVotingActive ? 1000 : false, // Poll every 1 second during active voting
     staleTime: 500,
-    select: (data) => ({
-      participant1Votes: data?.participant1Votes || 0,
-      participant2Votes: data?.participant2Votes || 0,
-      totalVotes: data?.totalVotes || 0,
-      isActive: data?.isActive,
-      lastUpdated: Date.now()
-    })
   });
 };
 
 // Enhanced event listening for real-time vote updates (Feature 8)
 export const useContractEvents = (contractAddress: string, battleId: string) => {
-  const { contract } = useContract(contractAddress);
+  const { contract, isContractReady } = useContract(contractAddress);
   const queryClient = useQueryClient();
 
   const setupEventListeners = () => {
+    if (!contract || !isContractReady) {
+      return;
+    }
+
     // Listen for vote cast events with enhanced real-time updates
     contract.onVoteCast((eventBattleId, voter, participant, timestamp) => {
       if (eventBattleId === battleId) {
@@ -338,7 +492,9 @@ export const useContractEvents = (contractAddress: string, battleId: string) => 
   };
 
   const cleanupEventListeners = () => {
-    contract.removeAllListeners();
+    if (contract) {
+      contract.removeAllListeners();
+    }
   };
 
   return {

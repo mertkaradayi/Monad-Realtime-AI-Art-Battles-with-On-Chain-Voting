@@ -268,12 +268,60 @@ export class ContractDeploymentService {
       votingDuration: 2 * 60, // 2 minutes in seconds
     };
 
-    // For now, we'll return the contract address and parameters
-    // In a full implementation, this would interact with the contract via web3
-    console.log('📝 Battle parameters prepared for contract:', battleParams);
+    console.log('📝 Creating battle on contract with parameters:', battleParams);
     console.log('📍 Contract Address:', this.contractAddress);
-    
-    return this.contractAddress;
+
+    try {
+      // Import ethers for contract interaction
+      const { ethers } = await import('ethers');
+      
+      // Create provider and wallet
+      if (!process.env.PRIVATE_KEY || !process.env.MONAD_TESTNET_RPC) {
+        throw new Error('Missing required environment variables: PRIVATE_KEY or MONAD_TESTNET_RPC');
+      }
+
+      const provider = new ethers.JsonRpcProvider(process.env.MONAD_TESTNET_RPC);
+      const wallet = new ethers.Wallet(process.env.PRIVATE_KEY, provider);
+      
+      // Contract ABI for createBattle function
+      const contractABI = [
+        "function createBattle(string memory battleId, string memory concept, address participant1, address participant2, string memory participant1Prompt, string memory participant2Prompt, string memory participant1ImageUrl, string memory participant2ImageUrl, uint256 votingDuration) external"
+      ];
+      
+      // Create contract instance
+      const contract = new ethers.Contract(this.contractAddress, contractABI, wallet);
+      
+      // Call createBattle function
+      console.log('🚀 Calling createBattle on contract...');
+      const tx = await contract.createBattle(
+        battleParams.battleId,
+        battleParams.concept,
+        battleParams.participant1,
+        battleParams.participant2,
+        battleParams.participant1Prompt,
+        battleParams.participant2Prompt,
+        battleParams.participant1ImageUrl,
+        battleParams.participant2ImageUrl,
+        battleParams.votingDuration
+      );
+      
+      console.log('📋 Transaction sent:', tx.hash);
+      
+      // Wait for transaction confirmation
+      const receipt = await tx.wait();
+      console.log('✅ Battle created on contract!');
+      console.log('📊 Transaction receipt:', {
+        hash: receipt.hash,
+        blockNumber: receipt.blockNumber,
+        gasUsed: receipt.gasUsed.toString()
+      });
+      
+      return this.contractAddress;
+      
+    } catch (error) {
+      console.error('❌ Failed to create battle on contract:', error);
+      throw new Error(`Failed to create battle on contract: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    }
   }
 
   /**
@@ -284,8 +332,17 @@ export class ContractDeploymentService {
       throw new Error('Contract not deployed. Please deploy the contract first.');
     }
 
-    // Generate QR code that directly points to the voting page
-    return await QRGeneratorService.generateVotingQR(battle.id);
+    if (!battle.participant1_wallet || !battle.participant2_wallet) {
+      throw new Error('Battle must have both participants to generate voting QR');
+    }
+
+    // Generate QR code with monad:// payload including contract address and participant info
+    return await QRGeneratorService.generateVotingQR(
+      battle.id,
+      this.contractAddress,
+      battle.participant1_wallet,
+      battle.participant2_wallet
+    );
   }
 
   /**

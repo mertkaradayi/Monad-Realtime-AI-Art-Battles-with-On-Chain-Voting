@@ -12,13 +12,16 @@ export const BATTLE_VOTING_ABI = [
   "function createBattle(string memory battleId, string memory concept, address participant1, address participant2, string memory participant1Prompt, string memory participant2Prompt, string memory participant1ImageUrl, string memory participant2ImageUrl, uint256 votingDuration) external",
   "function castVote(string memory battleId, address participant) external",
   "function completeBattle(string memory battleId) external",
+  "function autoCompleteBattle(string memory battleId) external",
   "function extendVoting(string memory battleId, uint256 additionalTime) external",
   "function getBattle(string memory battleId) external view returns (tuple(string battleId, string concept, address participant1, address participant2, string participant1Prompt, string participant2Prompt, string participant1ImageUrl, string participant2ImageUrl, uint256 totalVotes, uint256 participant1Votes, uint256 participant2Votes, address winner, bool isActive, uint256 votingEndTime, address creator))",
   "function getBattleVotes(string memory battleId) external view returns (tuple(address voter, address participant, uint256 timestamp)[])",
   "function hasVoterVoted(string memory battleId, address voter) external view returns (bool)",
   "function getVoterTotalVotes(address voter) external view returns (uint256)",
   "function isVotingActive(string memory battleId) external view returns (bool)",
-  "function getVotingTimeRemaining(string memory battleId) external view returns (uint256)"
+  "function getVotingTimeRemaining(string memory battleId) external view returns (uint256)",
+  "function getWinnerInfo(string memory battleId) external view returns (address winner, uint256 participant1Votes, uint256 participant2Votes, bool isCompleted)",
+  "function canAutoComplete(string memory battleId) external view returns (bool canAutoComplete, uint256 timeRemaining)"
 ] as const;
 
 // Monad Testnet configuration
@@ -54,6 +57,18 @@ export interface VoteInfo {
   timestamp: number;
 }
 
+export interface WinnerInfo {
+  winner: string;
+  participant1Votes: number;
+  participant2Votes: number;
+  isCompleted: boolean;
+}
+
+export interface AutoCompleteInfo {
+  canAutoComplete: boolean;
+  timeRemaining: number;
+}
+
 // Contract interaction utilities
 export class BattleVotingContract {
   public contract: ethers.Contract;
@@ -70,6 +85,11 @@ export class BattleVotingContract {
   setSigner(signer: ethers.Signer) {
     this.signer = signer;
     this.contract = this.contract.connect(signer) as ethers.Contract;
+  }
+
+  // Check if signer is available
+  hasSigner(): boolean {
+    return this.signer !== null;
   }
 
   // Read operations (no signer required)
@@ -116,10 +136,28 @@ export class BattleVotingContract {
     }));
   }
 
+  async getWinnerInfo(battleId: string): Promise<WinnerInfo> {
+    const [winner, participant1Votes, participant2Votes, isCompleted] = await this.contract.getWinnerInfo(battleId);
+    return {
+      winner,
+      participant1Votes: Number(participant1Votes),
+      participant2Votes: Number(participant2Votes),
+      isCompleted
+    };
+  }
+
+  async canAutoComplete(battleId: string): Promise<AutoCompleteInfo> {
+    const [canAutoComplete, timeRemaining] = await this.contract.canAutoComplete(battleId);
+    return {
+      canAutoComplete,
+      timeRemaining: Number(timeRemaining)
+    };
+  }
+
   // Write operations (require signer)
   async castVote(battleId: string, participantAddress: string): Promise<ethers.TransactionResponse> {
     if (!this.signer) {
-      throw new Error('Signer required for voting');
+      throw new Error('Wallet not connected. Please connect your wallet to vote.');
     }
 
     const contractWithSigner = this.contract.connect(this.signer);
@@ -133,6 +171,15 @@ export class BattleVotingContract {
 
     const contractWithSigner = this.contract.connect(this.signer);
     return await (contractWithSigner as any).completeBattle(battleId);
+  }
+
+  async autoCompleteBattle(battleId: string): Promise<ethers.TransactionResponse> {
+    if (!this.signer) {
+      throw new Error('Signer required for auto-completing battle');
+    }
+
+    const contractWithSigner = this.contract.connect(this.signer);
+    return await (contractWithSigner as any).autoCompleteBattle(battleId);
   }
 
   async extendVoting(battleId: string, additionalTime: number): Promise<ethers.TransactionResponse> {

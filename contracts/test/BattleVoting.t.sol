@@ -317,4 +317,151 @@ contract BattleVotingTest is Test {
         vm.warp(block.timestamp + 2 hours);
         assertFalse(battleVoting.isVotingActive(BATTLE_ID));
     }
+
+    // Feature 9: Test auto-complete battle functionality
+    function testAutoCompleteBattle() public {
+        // Create battle with short voting duration
+        vm.prank(creator);
+        battleVoting.createBattle(
+            BATTLE_ID,
+            CONCEPT,
+            participant1,
+            participant2,
+            PROMPT1,
+            PROMPT2,
+            IMAGE_URL1,
+            IMAGE_URL2,
+            2 // 2 seconds voting duration
+        );
+
+        // Cast some votes
+        vm.prank(voter1);
+        battleVoting.castVote(BATTLE_ID, participant1);
+        
+        vm.prank(voter2);
+        battleVoting.castVote(BATTLE_ID, participant2);
+
+        // Fast forward past voting end time
+        vm.warp(block.timestamp + 3);
+
+        // Anyone should be able to auto-complete the battle
+        vm.prank(voter1);
+        battleVoting.autoCompleteBattle(BATTLE_ID);
+
+        // Check that battle is completed
+        BattleVoting.Battle memory battle = battleVoting.getBattle(BATTLE_ID);
+        
+        assertEq(battle.battleId, BATTLE_ID);
+        assertEq(battle.totalVotes, 2);
+        assertEq(battle.participant1Votes, 1);
+        assertEq(battle.participant2Votes, 1);
+        assertFalse(battle.isActive);
+        // Winner should be determined by tie-break logic (block timestamp % 2)
+        assertTrue(battle.winner == participant1 || battle.winner == participant2);
+    }
+
+    // Feature 9: Test canAutoComplete function
+    function testCanAutoComplete() public {
+        // Create battle with short voting duration
+        vm.prank(creator);
+        battleVoting.createBattle(
+            BATTLE_ID,
+            CONCEPT,
+            participant1,
+            participant2,
+            PROMPT1,
+            PROMPT2,
+            IMAGE_URL1,
+            IMAGE_URL2,
+            2 // 2 seconds voting duration
+        );
+
+        // Initially should not be able to auto-complete
+        (bool canAutoComplete, uint256 timeRemaining) = battleVoting.canAutoComplete(BATTLE_ID);
+        assertFalse(canAutoComplete);
+        assertTrue(timeRemaining > 0);
+
+        // Fast forward past voting end time
+        vm.warp(block.timestamp + 3);
+
+        // Now should be able to auto-complete
+        (canAutoComplete, timeRemaining) = battleVoting.canAutoComplete(BATTLE_ID);
+        assertTrue(canAutoComplete);
+        assertEq(timeRemaining, 0);
+    }
+
+    // Feature 9: Test getWinnerInfo function
+    function testGetWinnerInfo() public {
+        // Create and complete battle
+        vm.prank(creator);
+        battleVoting.createBattle(
+            BATTLE_ID,
+            CONCEPT,
+            participant1,
+            participant2,
+            PROMPT1,
+            PROMPT2,
+            IMAGE_URL1,
+            IMAGE_URL2,
+            2 // Short duration
+        );
+
+        // Cast votes
+        vm.prank(voter1);
+        battleVoting.castVote(BATTLE_ID, participant1);
+        
+        vm.prank(voter2);
+        battleVoting.castVote(BATTLE_ID, participant1);
+
+        // Fast forward past voting end time
+        vm.warp(block.timestamp + 3);
+
+        // Complete battle
+        vm.prank(creator);
+        battleVoting.completeBattle(BATTLE_ID);
+
+        // Get winner info
+        (address winner, uint256 p1Votes, uint256 p2Votes, bool isCompleted) = battleVoting.getWinnerInfo(BATTLE_ID);
+        
+        assertEq(winner, participant1);
+        assertEq(p1Votes, 2);
+        assertEq(p2Votes, 0);
+        assertTrue(isCompleted);
+    }
+
+    // Feature 9: Test tie-break logic
+    function testTieBreakLogic() public {
+        // Create battle
+        vm.prank(creator);
+        battleVoting.createBattle(
+            BATTLE_ID,
+            CONCEPT,
+            participant1,
+            participant2,
+            PROMPT1,
+            PROMPT2,
+            IMAGE_URL1,
+            IMAGE_URL2,
+            2 // Short duration
+        );
+
+        // Cast equal votes
+        vm.prank(voter1);
+        battleVoting.castVote(BATTLE_ID, participant1);
+        
+        vm.prank(voter2);
+        battleVoting.castVote(BATTLE_ID, participant2);
+
+        // Fast forward past voting end time
+        vm.warp(block.timestamp + 3);
+
+        // Complete battle
+        vm.prank(creator);
+        battleVoting.completeBattle(BATTLE_ID);
+
+        // Check that winner is determined by tie-break
+        (address winner, , , bool isCompleted) = battleVoting.getWinnerInfo(BATTLE_ID);
+        assertTrue(isCompleted);
+        assertTrue(winner == participant1 || winner == participant2);
+    }
 }

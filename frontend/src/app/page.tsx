@@ -13,6 +13,10 @@ import { Toaster } from '@/components/ui/sonner'
 import { toast } from 'sonner'
 import { api } from '@/lib/api'
 import { useBattlePolling } from '@/hooks/useBattlePolling'
+import { 
+  useVotingStatus, 
+  useContract 
+} from '@/hooks/useContract'
 
 interface Battle {
   id: string
@@ -38,6 +42,100 @@ interface Battle {
   joining_qr_data: string | null
   voting_qr_data: string | null
   joiningQR?: string
+}
+
+// Voting Countdown Component
+function VotingCountdown({ battleId }: { battleId: string }) {
+  const [contractInfo, setContractInfo] = useState<any>(null)
+  const [isLoading, setIsLoading] = useState(true)
+
+  // Fetch contract info when component mounts
+  useEffect(() => {
+    const fetchContractInfo = async () => {
+      try {
+        const result = await api.getContractInfo(battleId)
+        if (result.success) {
+          setContractInfo(result.data)
+        }
+      } catch (err) {
+        console.error('Error fetching contract info:', err)
+      } finally {
+        setIsLoading(false)
+      }
+    }
+
+    fetchContractInfo()
+  }, [battleId])
+
+  // Use contract hooks when contract address is available
+  const { data: votingStatus } = useVotingStatus(
+    contractInfo?.contractAddress || '', 
+    battleId
+  )
+
+  if (isLoading) {
+    return (
+      <div className="mt-6 p-4 bg-white/20 rounded-lg">
+        <div className="animate-pulse text-white text-lg">Loading countdown...</div>
+      </div>
+    )
+  }
+
+  if (!contractInfo?.contractAddress || !votingStatus) {
+    return (
+      <div className="mt-6 p-4 bg-yellow-500/20 rounded-lg">
+        <div className="text-white text-lg">⏳ Preparing voting countdown...</div>
+      </div>
+    )
+  }
+
+  return (
+    <div className="mt-6 p-6 bg-white/20 rounded-lg">
+      <div className="text-center space-y-4">
+        <div className="text-2xl font-bold text-white">
+          ⏰ Voting Countdown
+        </div>
+        
+        <div className="grid grid-cols-3 gap-4 text-center">
+          <div>
+            <div className="text-4xl font-bold text-white">
+              {votingStatus.timeRemaining > 0 ? `${votingStatus.timeRemaining}s` : "0s"}
+            </div>
+            <div className="text-sm text-white/80">Time Remaining</div>
+          </div>
+          
+          <div>
+            <div className="text-2xl font-bold text-white">
+              {votingStatus.isActive ? "🟢 Active" : "🔴 Ended"}
+            </div>
+            <div className="text-sm text-white/80">Status</div>
+          </div>
+          
+          <div>
+            <div className="text-2xl font-bold text-white">
+              {votingStatus.votingDuration}s
+            </div>
+            <div className="text-sm text-white/80">Total Duration</div>
+          </div>
+        </div>
+        
+        {votingStatus.timeRemaining > 0 && (
+          <div className="w-full bg-white/30 rounded-full h-3 mt-4">
+            <div 
+              className="bg-white h-3 rounded-full transition-all duration-1000"
+              style={{ width: `${(votingStatus.timeRemaining / votingStatus.votingDuration) * 100}%` }}
+            ></div>
+          </div>
+        )}
+        
+        {votingStatus.votingEnded && (
+          <div className="text-lg font-semibold text-white">
+            🏁 Voting has ended!
+          </div>
+        )}
+      </div>
+    </div>
+  )
 }
 
 export default function Home() {
@@ -813,6 +911,9 @@ export default function Home() {
                                 <p className="text-xl opacity-90">
                                   Vote on Monad testnet using the QR code below
                                 </p>
+                                
+                                {/* Voting Countdown Timer */}
+                                <VotingCountdown battleId={battle.id} />
                               </div>
 
                               {/* Voting QR Code */}

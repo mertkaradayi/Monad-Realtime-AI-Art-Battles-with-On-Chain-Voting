@@ -21,12 +21,16 @@ import {
   useContractEvents,
   useGasEstimation,
   useAutoCompleteBattle,
+  useAutoCompleteBattleV2,
+  useWinnerInfo,
+  useCanAutoComplete,
   useRealTimeVoteCounting,
   useHighFrequencyVoteCounting,
   useTransactionStatus
 } from '@/hooks/useContract'
 import { VoteCounters } from '@/components/AnimatedVoteCounter'
 import { TransactionFeed, VotingMetrics } from '@/components/TransactionFeed'
+import { WinnerCelebration } from '@/components/WinnerCelebration'
 import { parseContractError } from '@/lib/contracts'
 
 interface Battle {
@@ -81,6 +85,7 @@ export default function VotePage() {
   const [contractInfo, setContractInfo] = useState<ContractInfo | null>(null)
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [showWinnerCelebration, setShowWinnerCelebration] = useState(false)
 
   // Contract hooks
   const contractAddress = contractInfo?.contractAddress
@@ -141,6 +146,11 @@ export default function VotePage() {
 
   // Auto-complete battle when countdown ends
   const autoCompleteMutation = useAutoCompleteBattle(contractAddress || '', battleId)
+  
+  // Feature 9: Enhanced auto-complete and winner determination
+  const autoCompleteV2Mutation = useAutoCompleteBattleV2(contractAddress || '', battleId)
+  const { data: winnerInfo } = useWinnerInfo(contractAddress || '', battleId)
+  const { data: canAutoComplete } = useCanAutoComplete(contractAddress || '', battleId)
 
   // Gas estimation for voting
   const { data: gasEstimate1 } = useGasEstimation(
@@ -176,6 +186,21 @@ export default function VotePage() {
       return () => cleanupEventListeners()
     }
   }, [contractAddress, setupEventListeners, cleanupEventListeners])
+
+  // Feature 9: Automatic winner announcement when 120-second timer expires
+  useEffect(() => {
+    if (canAutoComplete?.canAutoComplete && !autoCompleteV2Mutation.isPending && !autoCompleteV2Mutation.isSuccess) {
+      console.log('Auto-completing battle after 120-second timer expired');
+      autoCompleteV2Mutation.mutate();
+    }
+  }, [canAutoComplete, autoCompleteV2Mutation])
+
+  // Feature 9: Show winner celebration when winner is determined
+  useEffect(() => {
+    if (winnerInfo?.isCompleted && winnerInfo?.winner && !showWinnerCelebration) {
+      setShowWinnerCelebration(true)
+    }
+  }, [winnerInfo, showWinnerCelebration])
 
   const fetchBattle = async () => {
     try {
@@ -618,16 +643,47 @@ export default function VotePage() {
                 </div>
               )}
 
-              {/* Winner announcement */}
-              {votingStatus?.votingEnded && realTimeVoteData?.winner && (
-                <div className="text-center p-4 bg-green-50 border-2 border-green-500 rounded-lg">
-                  <div className="text-3xl mb-2">🏆</div>
-                  <h3 className="text-xl font-bold text-green-600 mb-2">Winner Announced!</h3>
-                  <p className="text-sm text-muted-foreground">
-                    Winner: {realTimeVoteData.winner.slice(0, 6)}...{realTimeVoteData.winner.slice(-4)}
-                  </p>
+              {/* Winner announcement - Feature 9 */}
+              {winnerInfo?.isCompleted && winnerInfo?.winner && (
+                <div className="text-center p-6 bg-gradient-to-r from-green-50 to-blue-50 border-2 border-green-500 rounded-lg">
+                  <div className="text-4xl mb-4">🏆</div>
+                  <h3 className="text-2xl font-bold text-green-600 mb-3">Winner Announced!</h3>
+                  <div className="space-y-2">
+                    <p className="text-lg font-semibold text-foreground">
+                      Winner: {winnerInfo.winner.slice(0, 6)}...{winnerInfo.winner.slice(-4)}
+                    </p>
+                    <p className="text-lg font-semibold text-muted-foreground">
+                      Final Score: {winnerInfo.participant1Votes} - {winnerInfo.participant2Votes}
+                    </p>
+                    <div className="mt-4 p-3 bg-white/50 rounded-lg">
+                      <p className="text-sm text-muted-foreground">
+                        ✅ On-chain verification complete
+                      </p>
+                      <p className="text-xs text-muted-foreground mt-1">
+                        Results verified on Monad testnet blockchain
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Auto-completion status - Feature 9 */}
+              {autoCompleteV2Mutation.isPending && (
+                <div className="text-center p-4 bg-blue-50 border-2 border-blue-500 rounded-lg">
+                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-3"></div>
+                  <p className="text-lg font-semibold text-blue-600">Determining Winner...</p>
                   <p className="text-sm text-muted-foreground mt-1">
-                    Final Score: {realTimeVoteData.participant1Votes} - {realTimeVoteData.participant2Votes}
+                    Processing on-chain winner calculation
+                  </p>
+                </div>
+              )}
+              
+              {autoCompleteV2Mutation.isSuccess && (
+                <div className="text-center p-4 bg-green-50 border-2 border-green-500 rounded-lg">
+                  <div className="text-3xl mb-2">🎉</div>
+                  <p className="text-lg font-semibold text-green-600">Battle completed automatically!</p>
+                  <p className="text-sm text-muted-foreground mt-1">
+                    Winner determined by smart contract
                   </p>
                 </div>
               )}
@@ -689,6 +745,21 @@ export default function VotePage() {
           </Card>
         )}
       </div>
+      
+      {/* Feature 9: Winner Celebration Modal */}
+      {showWinnerCelebration && winnerInfo && battle && contractInfo && (
+        <WinnerCelebration
+          winnerInfo={winnerInfo}
+          battleConcept={battle.concept}
+          participant1Address={onChainBattleInfo?.participant1 || ''}
+          participant2Address={onChainBattleInfo?.participant2 || ''}
+          participant1ImageUrl={battle.participant1_image_url || ''}
+          participant2ImageUrl={battle.participant2_image_url || ''}
+          contractAddress={contractInfo.contractAddress}
+          battleId={battleId}
+          onClose={() => setShowWinnerCelebration(false)}
+        />
+      )}
       
       <Toaster />
     </div>
