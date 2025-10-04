@@ -29,11 +29,7 @@ import {
   useTransactionStatus
 } from '@/hooks/useContract'
 
-// Required for static export with dynamic routes
-export async function generateStaticParams() {
-  // Return empty array for static export - pages will be generated on demand
-  return []
-}
+// Note: dynamic route is handled at runtime; no static params exported in client page
 import { VoteCounters } from '@/components/AnimatedVoteCounter'
 import { TransactionFeed, VotingMetrics } from '@/components/TransactionFeed'
 import { WinnerCelebration } from '@/components/WinnerCelebration'

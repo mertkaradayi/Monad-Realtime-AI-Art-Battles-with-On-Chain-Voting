@@ -1,4 +1,5 @@
 import type { NextConfig } from "next";
+import path from "path";
 
 const nextConfig: NextConfig = {
   // Configuration for Netlify deployment
@@ -20,6 +21,10 @@ const nextConfig: NextConfig = {
   experimental: {
     // Enable modern bundling for better performance
     esmExternals: true,
+  },
+  // Silence Turbopack root inference warnings in monorepo
+  turbopack: {
+    root: path.join(__dirname, ".."),
   },
 };
 
