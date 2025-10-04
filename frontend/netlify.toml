@@ -6,16 +6,10 @@
 [build.environment]
   NODE_VERSION = "18"
   NPM_VERSION = "10"
+  NEXT_TELEMETRY_DISABLED = "1"
 
-# Netlify Next.js plugin configuration
-[[plugins]]
-  package = "@netlify/plugin-nextjs"
-
-# Next.js App Router redirects
-[[redirects]]
-  from = "/*"
-  to = "/index.html"
-  status = 200
+# Netlify automatically configures Next.js 15.5.4 with OpenNext adapter
+# No explicit plugin configuration needed for modern Next.js versions
 
 # Headers for security
 [[headers]]

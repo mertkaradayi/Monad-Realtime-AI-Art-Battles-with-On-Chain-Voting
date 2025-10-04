@@ -13,8 +13,14 @@ const nextConfig: NextConfig = {
   // Disable TypeScript type checking during build
   typescript: {
     ignoreBuildErrors: true,
-  }
-  // Removed experimental.esmExternals to fix Turbopack compatibility
+  },
+  // Optimize for Netlify deployment
+  experimental: {
+    // Enable modern bundling for better performance
+    esmExternals: true,
+  },
+  // Configure for Netlify's edge runtime
+  runtime: 'nodejs',
 };
 
 export default nextConfig;
