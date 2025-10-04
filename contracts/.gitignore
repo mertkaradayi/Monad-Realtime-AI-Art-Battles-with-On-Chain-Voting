@@ -1,0 +1,22 @@
+# Foundry build artifacts
+out/
+cache/
+broadcast/
+
+# Environment files
+.env
+.env.*
+
+# OS generated files
+.DS_Store
+Thumbs.db
+
+# Editor files
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Temporary files
+*.tmp
+*.backup

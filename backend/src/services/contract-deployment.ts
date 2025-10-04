@@ -47,14 +47,24 @@ export class ContractDeploymentService {
       }
 
       // Change to contracts directory and deploy
-      const contractsDir = process.cwd() + '/contracts';
-      const deployCommand = `cd ${contractsDir} && forge script script/DeployBattleVoting.s.sol --rpc-url $MONAD_TESTNET_RPC --broadcast`;
-
+      // The contracts directory is at the root level, not in backend
+      const contractsDir = process.cwd().replace('/backend', '') + '/contracts';
+      const forgePath = '/Users/imertkaradayi/.foundry/bin/forge';
+      
       console.log('📝 Executing deployment command...');
+      
+      // Ensure PRIVATE_KEY is in the correct format (with 0x prefix for forge)
+      let privateKey = process.env.PRIVATE_KEY;
+      if (privateKey && !privateKey.startsWith('0x')) {
+        privateKey = '0x' + privateKey;
+      }
+      
+      const deployCommand = `cd ${contractsDir} && PRIVATE_KEY="${privateKey}" MONAD_TESTNET_RPC="${process.env.MONAD_TESTNET_RPC}" ${forgePath} script script/DeployBattleVoting.s.sol --rpc-url $MONAD_TESTNET_RPC --broadcast`;
+      
       const { stdout, stderr } = await execAsync(deployCommand, {
         env: {
           ...process.env,
-          PRIVATE_KEY: process.env.PRIVATE_KEY,
+          PRIVATE_KEY: privateKey,
           MONAD_TESTNET_RPC: process.env.MONAD_TESTNET_RPC,
         },
       });
@@ -65,8 +75,8 @@ export class ContractDeploymentService {
 
       console.log('📋 Deployment output:', stdout);
 
-      // Parse deployment info from the generated deployment.env file
-      const deploymentInfo = await this.parseDeploymentInfo(contractsDir);
+      // Parse deployment info from the console output
+      const deploymentInfo = this.parseDeploymentInfoFromOutput(stdout);
       
       this.contractAddress = deploymentInfo.contractAddress;
       this.deploymentInfo = deploymentInfo;
@@ -84,7 +94,70 @@ export class ContractDeploymentService {
   }
 
   /**
-   * Parse deployment information from the generated deployment.env file
+   * Parse deployment information from the console output
+   */
+  private static parseDeploymentInfoFromOutput(output: string): ContractDeploymentResult {
+    try {
+      
+      // Try to extract contract address from the console.log output
+      const contractAddressMatch = output.match(/BattleVoting deployed to:\s*(0x[a-fA-F0-9]{40})/);
+      const deployerAddressMatch = output.match(/Deployer address:\s*(0x[a-fA-F0-9]{40})/);
+      
+      if (!contractAddressMatch || !deployerAddressMatch) {
+        console.error('❌ Could not find contract address or deployer address in output');
+        console.error('📋 Available output:', output);
+        throw new Error('Contract address or deployer address not found in output');
+      }
+      
+      const contractAddress = contractAddressMatch[1];
+      const deployerAddress = deployerAddressMatch[1];
+      
+      // Try to extract deployment info from the structured output
+      const deploymentInfoMatch = output.match(/=== DEPLOYMENT INFO ===\n([\s\S]*?)\n=== END DEPLOYMENT INFO ===/);
+      
+      const deploymentInfo: Partial<ContractDeploymentResult> = {
+        contractAddress,
+        deployerAddress,
+        network: 'monad_testnet',
+        chainId: 10143
+      };
+      
+      if (deploymentInfoMatch) {
+        const deploymentInfoText = deploymentInfoMatch[1];
+        const lines = deploymentInfoText.split('\n');
+        
+        for (const line of lines) {
+          const [key, value] = line.split('=');
+          if (key && value) {
+            switch (key) {
+              case 'DEPLOYMENT_BLOCK':
+                deploymentInfo.deploymentBlock = parseInt(value);
+                break;
+              case 'DEPLOYMENT_TIMESTAMP':
+                deploymentInfo.deploymentTimestamp = parseInt(value);
+                break;
+            }
+          }
+        }
+      }
+
+      // Set default values if not found
+      if (!deploymentInfo.deploymentBlock) {
+        deploymentInfo.deploymentBlock = 0; // Will be updated when we can get the actual block
+      }
+      if (!deploymentInfo.deploymentTimestamp) {
+        deploymentInfo.deploymentTimestamp = Math.floor(Date.now() / 1000);
+      }
+
+      return deploymentInfo as ContractDeploymentResult;
+    } catch (error) {
+      console.error('❌ Failed to parse deployment info from output:', error);
+      throw new Error(`Failed to parse deployment info: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    }
+  }
+
+  /**
+   * Parse deployment information from the generated deployment.env file (legacy method)
    */
   private static async parseDeploymentInfo(contractsDir: string): Promise<ContractDeploymentResult> {
     try {

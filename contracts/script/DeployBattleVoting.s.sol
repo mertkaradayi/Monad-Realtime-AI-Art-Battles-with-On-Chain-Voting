@@ -41,7 +41,10 @@ contract DeployBattleVoting is Script {
             "\nCHAIN_ID=10143"
         ));
         
-        vm.writeFile("deployment.env", deploymentInfo);
-        console.log("Deployment info saved to deployment.env");
+        // Note: vm.writeFile is restricted in some environments
+        // The deployment info is logged to console for manual capture
+        console.log("=== DEPLOYMENT INFO ===");
+        console.log(deploymentInfo);
+        console.log("=== END DEPLOYMENT INFO ===");
     }
 }
