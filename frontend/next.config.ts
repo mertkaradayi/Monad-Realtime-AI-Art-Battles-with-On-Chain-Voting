@@ -5,11 +5,8 @@ const nextConfig: NextConfig = {
   images: {
     domains: ['localhost'],
     unoptimized: true
-  },
-  // Enable experimental features if needed
-  experimental: {
-    esmExternals: false
   }
+  // Removed experimental.esmExternals to fix Turbopack compatibility
 };
 
 export default nextConfig;
