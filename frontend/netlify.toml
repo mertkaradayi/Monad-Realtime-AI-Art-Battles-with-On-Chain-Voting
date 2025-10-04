@@ -11,6 +11,12 @@
 # Netlify automatically configures Next.js 15.5.4 with OpenNext adapter
 # No explicit plugin configuration needed for modern Next.js versions
 
+# Redirects for Next.js App Router client-side routing
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200
+
 # Headers for security
 [[headers]]
   for = "/*"
