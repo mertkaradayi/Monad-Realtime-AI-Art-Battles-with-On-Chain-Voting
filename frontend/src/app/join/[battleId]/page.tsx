@@ -241,7 +241,10 @@ export default function JoinBattlePage() {
             prev.participant2_wallet !== newBattle.participant2_wallet ||
             prev.concept !== newBattle.concept ||
             prev.participant1_prompt !== newBattle.participant1_prompt ||
-            prev.participant2_prompt !== newBattle.participant2_prompt
+            prev.participant2_prompt !== newBattle.participant2_prompt ||
+            prev.image_generation_status !== newBattle.image_generation_status ||
+            prev.participant1_image_url !== newBattle.participant1_image_url ||
+            prev.participant2_image_url !== newBattle.participant2_image_url
           )
 
           if (statusChanged) {
@@ -268,6 +271,32 @@ export default function JoinBattlePage() {
           if (promptsSubmitted) {
             toast.success('🎨 All prompts submitted!', {
               description: 'Both participants have submitted their prompts. Ready for the next phase!',
+              duration: 5000
+            })
+          }
+
+          // Image generation status changes
+          const imageGenerationStarted = prev.image_generation_status !== 'generating' && newBattle.image_generation_status === 'generating'
+          const imageGenerationCompleted = prev.image_generation_status !== 'completed' && newBattle.image_generation_status === 'completed'
+          const imageGenerationFailed = prev.image_generation_status !== 'failed' && newBattle.image_generation_status === 'failed'
+
+          if (imageGenerationStarted) {
+            toast.info('🎨 Image generation started!', {
+              description: 'AI is creating images from your prompts...',
+              duration: 5000
+            })
+          }
+
+          if (imageGenerationCompleted) {
+            toast.success('🎉 Images generated successfully!', {
+              description: 'Your AI art battle images are ready!',
+              duration: 5000
+            })
+          }
+
+          if (imageGenerationFailed) {
+            toast.error('❌ Image generation failed', {
+              description: 'There was an error generating the images. Please try again.',
               duration: 5000
             })
           }
@@ -1071,6 +1100,128 @@ export default function JoinBattlePage() {
                       <Badge variant="default" className="text-xl px-6 py-3 bg-purple-600">
                         2/2 Prompts Submitted - Ready for Image Generation!
                       </Badge>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+
+            {/* Images Generated - Display Phase */}
+            {battle.image_generation_status === 'completed' && battle.participant1_image_url && battle.participant2_image_url && (
+              <Card className="border-2 border-green-500">
+                <CardContent className="py-16">
+                  <div className="space-y-8">
+                    <div className="text-center">
+                      <div className="text-6xl mb-4">🎨</div>
+                      <h2 className="text-4xl font-bold text-green-600 mb-2">
+                        IMAGES GENERATED!
+                      </h2>
+                      <p className="text-xl text-muted-foreground">
+                        Your AI art battle images are ready! Vote for your favorite.
+                      </p>
+                    </div>
+
+                    {/* Battle Concept Display */}
+                    <div className="bg-muted p-6 rounded-lg max-w-4xl mx-auto">
+                      <h3 className="text-2xl font-semibold mb-4 text-center">Battle Concept:</h3>
+                      <p className="text-xl text-foreground font-medium text-center">
+                        &ldquo;{battle.concept}&rdquo;
+                      </p>
+                    </div>
+
+                    {/* Generated Images Display */}
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-6xl mx-auto">
+                      {/* Participant 1 Image */}
+                      <Card className="border-2 border-blue-500">
+                        <CardHeader>
+                          <CardTitle className="text-xl text-blue-600 text-center">
+                            Participant 1
+                          </CardTitle>
+                          <div className="text-center">
+                            <Badge variant="outline" className="text-sm">
+                              {battle.participant1_wallet ? 
+                                `${battle.participant1_wallet.slice(0, 6)}...${battle.participant1_wallet.slice(-4)}` : 
+                                'Unknown'
+                              }
+                            </Badge>
+                          </div>
+                        </CardHeader>
+                        <CardContent className="p-4">
+                          <div className="space-y-4">
+                            <div className="relative">
+                              <img
+                                src={battle.participant1_image_url}
+                                alt="Participant 1 Generated Image"
+                                className="w-full h-96 object-cover rounded-lg border-2 border-blue-200"
+                                onError={(e) => {
+                                  const target = e.target as HTMLImageElement;
+                                  target.src = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAwIiBoZWlnaHQ9IjQwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSIjZjNmNGY2Ii8+PHRleHQgeD0iNTAlIiB5PSI1MCUiIGZvbnQtZmFtaWx5PSJBcmlhbCIgZm9udC1zaXplPSIxOCIgZmlsbD0iIzZjNzI4MCIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZHk9Ii4zZW0iPkltYWdlIG5vdCBmb3VuZDwvdGV4dD48L3N2Zz4=';
+                                }}
+                              />
+                              <div className="absolute top-2 left-2">
+                                <Badge className="bg-blue-600 text-white">Participant 1</Badge>
+                              </div>
+                            </div>
+                            <div className="bg-blue-50 p-3 rounded-lg">
+                              <p className="text-sm text-muted-foreground mb-1">Prompt:</p>
+                              <p className="text-sm text-foreground">
+                                &ldquo;{battle.participant1_prompt}&rdquo;
+                              </p>
+                            </div>
+                          </div>
+                        </CardContent>
+                      </Card>
+
+                      {/* Participant 2 Image */}
+                      <Card className="border-2 border-purple-500">
+                        <CardHeader>
+                          <CardTitle className="text-xl text-purple-600 text-center">
+                            Participant 2
+                          </CardTitle>
+                          <div className="text-center">
+                            <Badge variant="outline" className="text-sm">
+                              {battle.participant2_wallet ? 
+                                `${battle.participant2_wallet.slice(0, 6)}...${battle.participant2_wallet.slice(-4)}` : 
+                                'Unknown'
+                              }
+                            </Badge>
+                          </div>
+                        </CardHeader>
+                        <CardContent className="p-4">
+                          <div className="space-y-4">
+                            <div className="relative">
+                              <img
+                                src={battle.participant2_image_url}
+                                alt="Participant 2 Generated Image"
+                                className="w-full h-96 object-cover rounded-lg border-2 border-purple-200"
+                                onError={(e) => {
+                                  const target = e.target as HTMLImageElement;
+                                  target.src = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAwIiBoZWlnaHQ9IjQwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSIjZjNmNGY2Ii8+PHRleHQgeD0iNTAlIiB5PSI1MCUiIGZvbnQtZmFtaWx5PSJBcmlhbCIgZm9udC1zaXplPSIxOCIgZmlsbD0iIzZjNzI4MCIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZHk9Ii4zZW0iPkltYWdlIG5vdCBmb3VuZDwvdGV4dD48L3N2Zz4=';
+                                }}
+                              />
+                              <div className="absolute top-2 left-2">
+                                <Badge className="bg-purple-600 text-white">Participant 2</Badge>
+                              </div>
+                            </div>
+                            <div className="bg-purple-50 p-3 rounded-lg">
+                              <p className="text-sm text-muted-foreground mb-1">Prompt:</p>
+                              <p className="text-sm text-foreground">
+                                &ldquo;{battle.participant2_prompt}&rdquo;
+                              </p>
+                            </div>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    </div>
+
+                    {/* Voting Phase Status */}
+                    <div className="text-center">
+                      <Badge variant="default" className="text-xl px-6 py-3 bg-green-600">
+                        🗳️ Ready for Voting Phase
+                      </Badge>
+                      <p className="text-lg text-muted-foreground mt-4">
+                        The voting QR code will be generated soon for audience participation.
+                      </p>
                     </div>
                   </div>
                 </CardContent>

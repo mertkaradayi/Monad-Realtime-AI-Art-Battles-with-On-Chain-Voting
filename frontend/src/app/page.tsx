@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import { usePrivy } from '@privy-io/react-auth'
 import { AuthButton } from '@/components/AuthButton'
 import { LoginPage } from '@/components/LoginPage'
@@ -33,6 +33,9 @@ export default function Home() {
   const [error, setError] = useState<string | null>(null)
   const [myBattles, setMyBattles] = useState<Battle[]>([])
   const [, setIsLoadingMyBattles] = useState(false)
+  
+  // Track which battle notifications we've already shown to prevent spam
+  const shownNotifications = useRef<Set<string>>(new Set())
 
   // Check if current user is the battle creator
   const isBattleCreator = () => {
@@ -40,7 +43,7 @@ export default function Home() {
   }
 
   // Fetch user's battles to check for active ones
-  const fetchMyBattles = async () => {
+  const fetchMyBattles = useCallback(async () => {
     if (!authenticated || !user?.wallet?.address) return
 
     try {
@@ -59,14 +62,20 @@ export default function Home() {
         if (activeBattles.length > 0 && !battle) {
           // If there's an active battle and no current battle loaded, show reconnection option
           const mostRecentActive = activeBattles[0]
-          toast.info('🎯 Active battle found!', {
-            description: `You have an active battle: "${mostRecentActive.concept}"`,
-            duration: 8000,
-            action: {
-              label: 'Reconnect',
-              onClick: () => reconnectToBattle(mostRecentActive)
-            }
-          })
+          
+          // Only show notification if we haven't shown it for this battle yet
+          if (!shownNotifications.current.has(mostRecentActive.id)) {
+            shownNotifications.current.add(mostRecentActive.id)
+            
+            toast.info('🎯 Active battle found!', {
+              description: `You have an active battle: "${mostRecentActive.concept}"`,
+              duration: 8000,
+              action: {
+                label: 'Reconnect',
+                onClick: () => reconnectToBattle(mostRecentActive)
+              }
+            })
+          }
         }
       }
     } catch (err) {
@@ -74,13 +83,16 @@ export default function Home() {
     } finally {
       setIsLoadingMyBattles(false)
     }
-  }
+  }, [authenticated, user?.wallet?.address, battle])
 
   // Reconnect to an existing battle
   const reconnectToBattle = async (battleToReconnect: Battle) => {
     try {
       setIsLoading(true)
       setError(null)
+      
+      // Remove this battle from shown notifications since we're reconnecting
+      shownNotifications.current.delete(battleToReconnect.id)
       
       // Fetch the latest battle data
       const result = await api.getBattle(battleToReconnect.id)
@@ -189,6 +201,9 @@ export default function Home() {
     try {
       setIsLoading(true)
       setError(null)
+      
+      // Clear shown notifications when creating a new battle
+      shownNotifications.current.clear()
       
       toast.info('Creating battle with AI concept...')
       
@@ -542,7 +557,11 @@ export default function Home() {
               <div className="flex justify-center gap-4">
                 <Button 
                   variant="outline" 
-                  onClick={() => setBattle(null)}
+                  onClick={() => {
+                    // Clear shown notifications when dismissing current battle
+                    shownNotifications.current.clear()
+                    setBattle(null)
+                  }}
                   disabled={isLoading}
                 >
                   Create New Battle

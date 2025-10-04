@@ -59,13 +59,13 @@
 - [x] Add submission countdown/timer visible to audience (50-second timer)
 - [x] Toast notifications when each prompt is submitted
 
-### **Feature 5: Image Generation (fal.ai)** 🚧 **NEXT TO IMPLEMENT**
-- [ ] When both prompts submitted, trigger image generation
-- [ ] Show "Generating images..." status (LARGE loading animation)
-- [ ] Generate images using fal.ai with full prompts (concept + user completion)
-- [ ] Store image URLs in database
-- [ ] **Demo UI**: Full-screen loading with progress indicators and battle concept display
-- [ ] **Test**: Images generate successfully, URLs stored, concept is preserved
+### **Feature 5: Image Generation (fal.ai)** ✅ **COMPLETED**
+- [x] When both prompts submitted, trigger image generation
+- [x] Show "Generating images..." status (LARGE loading animation)
+- [x] Generate images using fal.ai with full prompts (concept + user completion)
+- [x] Store image URLs in database
+- [x] **Demo UI**: Full-screen loading with progress indicators and battle concept display
+- [x] **Test**: Images generate successfully, URLs stored, concept is preserved
 
 #### **Host Dashboard Enhancements (Feature 5)**
 - [ ] Show per-participant generation status (Queued → Generating → Complete)
@@ -73,7 +73,7 @@
 - [ ] Error state with retry control per participant
 - [ ] Timestamps for generation start/finish
 
-### **Feature 6: Image Display & Voting QR Generation**
+### **Feature 6: Image Display & Voting QR Generation** 🚧 **NEXT TO IMPLEMENT**
 - [ ] Show both generated images side by side (LARGE images - 600x600px minimum)
 - [ ] Display which participant created which image (LARGE labels)
 - [ ] Generate VOTING QR code for audience (40+ people)

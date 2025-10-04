@@ -479,7 +479,7 @@ export class BattleController {
         finalBattle.status === 'prompts_submitted'
       ) {
         // Start image generation asynchronously (don't await to avoid blocking response)
-        this.generateImagesForBattle(finalBattle.id, finalBattle.participant1_prompt, finalBattle.participant2_prompt)
+        BattleController.generateImagesForBattle(finalBattle.id, finalBattle.participant1_prompt, finalBattle.participant2_prompt)
           .catch(error => {
             console.error('Error generating images for battle:', finalBattle.id, error);
             // Update battle status to failed
