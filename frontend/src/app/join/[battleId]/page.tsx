@@ -16,6 +16,7 @@ import { toast } from 'sonner'
 import { api } from '@/lib/api'
 import { useBattlePolling } from '@/hooks/useBattlePolling'
 import { ImageGenerationLoading } from '@/components/ImageGenerationLoading'
+import { useVotingStatus } from '@/hooks/useContract'
 
 interface Battle {
   id: string
@@ -64,6 +65,13 @@ export default function JoinBattlePage() {
   const [showImageGenerationLoading, setShowImageGenerationLoading] = useState(false)
   const [contractInfo, setContractInfo] = useState<any>(null)
   const [isLoadingContractInfo, setIsLoadingContractInfo] = useState(false)
+
+  // Voting status hook for countdown
+  const contractAddress = contractInfo?.contractAddress
+  const { data: votingStatus } = useVotingStatus(
+    contractAddress || '', 
+    battleId
+  )
 
   // Fetch battle details and auto-join if possible
   useEffect(() => {
@@ -1446,6 +1454,57 @@ export default function JoinBattlePage() {
                             Scan this QR code with your mobile device to connect your Monad wallet and vote for your favorite AI-generated art!
                           </p>
                         </div>
+
+                        {/* Voting Countdown for Host Dashboard */}
+                        {votingStatus && isHost() && (
+                          <Card className="border-2 border-orange-500">
+                            <CardHeader>
+                              <CardTitle className="text-2xl text-orange-600 text-center">
+                                ⏰ Voting Countdown - 2 Minutes
+                              </CardTitle>
+                            </CardHeader>
+                            <CardContent className="space-y-4">
+                              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-center">
+                                <div>
+                                  <p className="text-sm font-semibold text-muted-foreground">Status</p>
+                                  <Badge variant={votingStatus.isActive ? "default" : "secondary"} className="text-lg px-4 py-2">
+                                    {votingStatus.isActive ? "Active" : "Ended"}
+                                  </Badge>
+                                </div>
+                                <div>
+                                  <p className="text-sm font-semibold text-muted-foreground">Time Remaining</p>
+                                  <div className="text-3xl font-bold text-orange-600">
+                                    {votingStatus.timeRemaining > 0 
+                                      ? `${votingStatus.timeRemaining}s`
+                                      : "0s"
+                                    }
+                                  </div>
+                                  {votingStatus.timeRemaining > 0 && (
+                                    <div className="w-full bg-gray-200 rounded-full h-2 mt-2">
+                                      <div 
+                                        className="bg-orange-600 h-2 rounded-full transition-all duration-1000"
+                                        style={{ width: `${(votingStatus.timeRemaining / votingStatus.votingDuration) * 100}%` }}
+                                      ></div>
+                                    </div>
+                                  )}
+                                </div>
+                                <div>
+                                  <p className="text-sm font-semibold text-muted-foreground">Total Duration</p>
+                                  <div className="text-2xl font-bold text-muted-foreground">
+                                    {votingStatus.votingDuration}s
+                                  </div>
+                                </div>
+                              </div>
+                              {votingStatus.timeRemaining <= 10 && votingStatus.timeRemaining > 0 && (
+                                <Alert className="border-red-500 bg-red-50">
+                                  <AlertDescription className="text-red-700 text-center font-bold">
+                                    ⚠️ Voting ends in {votingStatus.timeRemaining} seconds!
+                                  </AlertDescription>
+                                </Alert>
+                              )}
+                            </CardContent>
+                          </Card>
+                        )}
 
                         {/* Live Vote Counts */}
                         {contractInfo && (

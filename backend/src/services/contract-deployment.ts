@@ -265,7 +265,7 @@ export class ContractDeploymentService {
       participant2Prompt: battle.participant2_prompt,
       participant1ImageUrl: battle.participant1_image_url,
       participant2ImageUrl: battle.participant2_image_url,
-      votingDuration: 24 * 60 * 60, // 24 hours in seconds
+      votingDuration: 2 * 60, // 2 minutes in seconds
     };
 
     // For now, we'll return the contract address and parameters
@@ -326,7 +326,7 @@ export class ContractDeploymentService {
 - \`completeBattle\`: Complete the battle and determine winner (only battle creator)
 
 ## Voting Period
-- Duration: 24 hours
+- Duration: 2 minutes
 - One vote per address per battle
 - Winner determined by most votes
     `.trim();

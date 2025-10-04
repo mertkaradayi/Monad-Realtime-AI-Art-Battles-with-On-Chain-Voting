@@ -115,7 +115,7 @@
 ### **Feature 8: On-Chain Vote Counting & Real-time Updates** ✅ **COMPLETED**
 - [x] **Contract State Polling**: Real-time vote count updates from smart contract
 - [x] **Event Listening**: Listen for VoteCast events from contract
-- [x] **Performance Optimization**: Handle 100+ votes in 45 seconds
+- [x] **Performance Optimization**: Handle 100+ votes in 120 seconds
 - [x] **Transaction Status**: Show pending/confirmed states for all votes
 - [x] **Demo UI**: Prominent on-chain vote counters with blockchain transaction animations
 - [x] **High-Frequency Polling**: 1-second polling during active voting for real-time updates
@@ -132,7 +132,7 @@
 - [x] Voting participation rate and engagement metrics
 
 ### **Feature 9: On-Chain Winner Determination**
-- [ ] **60-Second Timer**: Enforce voting window with block timestamp validation
+- [ ] **120-Second Timer**: Enforce voting window with block timestamp validation
 - [ ] **On-Chain Calculation**: Determine winner directly from smart contract
 - [ ] **Automatic Trigger**: Auto-trigger winner announcement when voting ends
 - [ ] **Blockchain Verification**: All results publicly verifiable on Monad testnet
@@ -143,32 +143,17 @@
 - [ ] "Reveal On-Chain Winner" with blockchain verification
 - [ ] Show final tallies with contract transaction hashes
 - [ ] Tie-break workflow (on-chain random selection or host override)
-- [ ] "Proceed to NFT Minting" button with winner verification
 - [ ] Contract state finalization and result locking
 
-### **Feature 10: On-Chain NFT Minting**
-- [ ] **Smart Contract Integration**: Mint winner's image as NFT on Monad testnet
-- [ ] **Metadata Storage**: Store NFT metadata on-chain with IPFS integration
-- [ ] **Winner Verification**: Verify winner from on-chain voting results
-- [ ] **Transaction Display**: Show NFT minting transaction hash and explorer link
-- [ ] **Demo UI**: Prominent NFT minting status with blockchain transaction details
-- [ ] **Test**: NFT is minted successfully on Monad testnet, metadata is accessible
+### **Feature 10: Battle Results**
+- [ ] Show complete battle results (LARGE summary display)
+- [ ] Display winner and final vote counts
+- [ ] Show battle history
+- [ ] **Demo UI**: Full-screen results with winner celebration and battle summary
+- [ ] **Test**: Can view results and winner
 
 #### **Host Dashboard Enhancements (Feature 10)**
-- [ ] On-chain minting progress with transaction hash and Monad explorer link
-- [ ] Retry on failure with surfaced error details and gas optimization
-- [ ] Share QR/link to view minted NFT on Monad testnet
-- [ ] NFT metadata verification and IPFS pinning status
-
-### **Feature 11: Battle Results**
-- [ ] Show complete battle results (LARGE summary display)
-- [ ] Display minted NFT (LARGE NFT preview)
-- [ ] Show battle history
-- [ ] **Demo UI**: Full-screen results with large NFT display and battle summary
-- [ ] **Test**: Can view results and NFT
-
-#### **Host Dashboard Enhancements (Feature 11)**
-- [ ] Present final summary view (concept, prompts, images, votes, winner, NFT)
+- [ ] Present final summary view (concept, prompts, images, votes, winner)
 - [ ] Share results link/QR and download assets
 - [ ] "Start New Battle" control for quick reset
 
@@ -292,8 +277,8 @@ contract BattleVoting {
 - **Gas Optimization**: Efficient transaction handling with Foundry
 
 ### **Performance Requirements**
-- **Voting Window**: 60 seconds maximum
-- **Target Throughput**: 100+ votes in 60 seconds
+- **Voting Window**: 120 seconds maximum
+- **Target Throughput**: 100+ votes in 120 seconds
 - **Gas Optimization**: Efficient storage patterns for high throughput
 - **Real-time Updates**: Contract state polling every 2-3 seconds
 - **Transaction Handling**: Concurrent transaction management
@@ -484,12 +469,12 @@ contract BattleVoting {
 
 ### **Monad Hackathon Winning Features**
 - **On-Chain Voting**: True blockchain-native voting system
-- **High Throughput**: 100+ votes in 60 seconds on Monad testnet
+- **High Throughput**: 100+ votes in 120 seconds on Monad testnet
 - **Transparency**: All votes and results publicly verifiable
 - **Decentralization**: No central authority controlling votes
 - **Real-time Performance**: Live blockchain state updates
 - **Gas Optimization**: Efficient smart contract design
-- **NFT Integration**: Winner NFT minting on Monad testnet
+- **Winner Determination**: On-chain winner calculation and verification
 
 ---
 
@@ -498,7 +483,7 @@ contract BattleVoting {
 **Next Feature to Implement**: Feature 9 - On-Chain Winner Determination
 
 **Implementation Priority**: 
-1. **45-Second Timer** - Enforce voting window with block timestamp validation
+1. **120-Second Timer** - Enforce voting window with block timestamp validation
 2. **On-Chain Calculation** - Determine winner directly from smart contract
 3. **Automatic Trigger** - Auto-trigger winner announcement when voting ends
 4. **Blockchain Verification** - All results publicly verifiable on Monad testnet
@@ -538,6 +523,7 @@ contract BattleVoting {
 - 📊 **Real-time Vote Counting**: High-frequency polling with animated counters and transaction feed
 - 🎯 **Performance Optimization**: Optimized for 100+ votes in 45 seconds with 1-second polling
 - 🔄 **Event Listening**: Enhanced VoteCast event listening with immediate cache invalidation
+- 📝 **Feature Update**: Removed NFT minting (Feature 10), updated Feature 9 to 120-second timer, simplified Feature 10 to show winner only
 
 ---
 

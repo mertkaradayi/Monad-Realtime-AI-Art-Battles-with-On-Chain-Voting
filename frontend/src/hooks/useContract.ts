@@ -73,8 +73,8 @@ export const useVotingStatus = (contractAddress: string, battleId: string) => {
         contract.getVotingTimeRemaining(battleId)
       ]);
       
-      // Use 45 seconds as the voting duration for demo purposes
-      const votingDuration = 45; // 45 seconds
+      // Use 2 minutes as the voting duration for demo purposes
+      const votingDuration = 120; // 2 minutes (120 seconds)
       const countdownTime = Math.min(timeRemaining, votingDuration);
       
       // Voting is only active if contract says it's active AND countdown > 0

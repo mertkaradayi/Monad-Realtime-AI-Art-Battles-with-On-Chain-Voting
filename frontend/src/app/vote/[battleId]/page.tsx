@@ -557,12 +557,12 @@ export default function VotePage() {
           </Card>
         )}
 
-        {/* Voting Status with 45-Second Countdown */}
+        {/* Voting Status with 2-Minute Countdown */}
         {votingStatus && (
           <Card className="border-2 border-orange-500">
             <CardHeader>
               <CardTitle className="text-2xl text-orange-600 text-center">
-                ⏰ Voting Status - 45 Second Countdown
+                ⏰ Voting Status - 2 Minute Countdown
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
