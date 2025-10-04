@@ -39,8 +39,8 @@ app.use(rateLimiter);
 // LLM API routes (with LLM-specific rate limiting)
 app.use('/api/llm', auth, llmRateLimiter, llmRoutes);
 
-// Battle API routes
-app.use('/api/battles', auth, battleRoutes);
+// Battle API routes (with selective authentication)
+app.use('/api/battles', battleRoutes);
 
 // Health check endpoint
 app.get('/health', (req: Request, res: Response) => {

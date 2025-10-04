@@ -127,7 +127,7 @@ export class BattleController {
         data: {
           contractAddress,
           deploymentInfo,
-          votingQRData: votingQRData ? JSON.parse(votingQRData) : null,
+          votingQRData: votingQRData, // Now it's a QR code image, not JSON
           instructions,
           battle: {
             id: battle.id,
@@ -663,7 +663,7 @@ export class BattleController {
         const contractAddress = await ContractDeploymentService.createBattleOnContract(updatedBattle);
         
         // Generate voting QR code with contract information
-        const votingQRData = ContractDeploymentService.generateVotingQRData(updatedBattle);
+        const votingQRData = await ContractDeploymentService.generateVotingQRData(updatedBattle);
         
         // Update battle with voting QR data and contract address
         const { error: qrUpdateError } = await supabaseAdmin

@@ -56,6 +56,27 @@ export class QRGeneratorService {
   }
 
   /**
+   * Generate QR code data URL from custom voting data
+   */
+  static async generateVotingQRFromData(votingData: string): Promise<string> {
+    try {
+      const qrDataURL = await QRCode.toDataURL(votingData, {
+        width: 400,
+        margin: 2,
+        color: {
+          dark: '#000000',
+          light: '#FFFFFF'
+        }
+      });
+      
+      return qrDataURL;
+    } catch (error) {
+      console.error('QR code generation error:', error);
+      throw new Error('Failed to generate voting QR code');
+    }
+  }
+
+  /**
    * Parse QR code data
    */
   static parseQRData(qrString: string): { type: string; battleId: string; timestamp: string } | null {

@@ -1,22 +1,22 @@
 import { Router } from 'express';
 import { BattleController } from '../controllers/battles.js';
-import { authenticateWallet } from '../middleware/middleware.js';
+import { authenticateWallet, auth } from '../middleware/middleware.js';
 
 const router = Router();
 
-// Create a new battle
+// Create a new battle (requires authentication + wallet)
 router.post('/', ...authenticateWallet, BattleController.createBattle);
 
-// Get all battles
+// Get all battles (public)
 router.get('/', BattleController.getBattles);
 
-// Get battles created by current user
+// Get battles created by current user (requires authentication + wallet)
 router.get('/my-battles', ...authenticateWallet, BattleController.getBattlesByCreator);
 
-// Get battle by ID
+// Get battle by ID (public - no authentication required)
 router.get('/:id', BattleController.getBattle);
 
-// Get contract information and voting instructions for a battle
+// Get contract information and voting instructions for a battle (public)
 router.get('/:id/contract-info', BattleController.getContractInfo);
 
 // Join battle

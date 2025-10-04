@@ -36,6 +36,7 @@ interface Battle {
   participant2_generation_error: string | null
   image_generation_status: string | null
   joining_qr_data: string | null
+  voting_qr_data: string | null
   joiningQR?: string
 }
 
@@ -67,9 +68,9 @@ export default function Home() {
         const battles = result.data || []
         setMyBattles(battles)
         
-        // Check for active battles (waiting, active, or prompts_submitted)
+        // Check for active battles (waiting, active, prompts_submitted, or voting)
         const activeBattles = battles.filter((b: Battle) => 
-          b.status === 'waiting' || b.status === 'active' || b.status === 'prompts_submitted'
+          b.status === 'waiting' || b.status === 'active' || b.status === 'prompts_submitted' || b.status === 'voting'
         )
         
         if (activeBattles.length > 0 && !battle) {
@@ -147,7 +148,7 @@ export default function Home() {
   // Use coordinated polling hook
   const { isPolling } = useBattlePolling({
     battleId: battle?.id || null,
-    enabled: Boolean(battle && isBattleCreator() && authenticated && (battle.status === 'waiting' || battle.status === 'active' || battle.status === 'prompts_submitted')),
+    enabled: Boolean(battle && isBattleCreator() && authenticated && (battle.status === 'waiting' || battle.status === 'active' || battle.status === 'prompts_submitted' || battle.status === 'voting')),
     interval: 3000,
     onUpdate: () => fetchBattleStatus(true)
   })
@@ -801,14 +802,52 @@ export default function Home() {
                           </div>
 
                           {/* Voting Phase Status */}
-                          <div className="text-center mt-8">
-                            <Badge variant="default" className="text-xl px-6 py-3 bg-green-600">
-                              🗳️ Ready for Voting Phase
-                            </Badge>
-                            <p className="text-lg text-muted-foreground mt-4">
-                              The voting QR code will be generated soon for audience participation.
-                            </p>
-                          </div>
+                          {battle.status === 'voting' && battle.voting_qr_data ? (
+                            <div className="space-y-8 mt-8">
+                              {/* On-Chain Voting Status Banner */}
+                              <div className="text-center bg-gradient-to-r from-blue-500 to-purple-600 text-white p-8 rounded-lg">
+                                <div className="text-6xl mb-4">⛓️</div>
+                                <h2 className="text-4xl font-bold mb-2">
+                                  ON-CHAIN VOTING PHASE
+                                </h2>
+                                <p className="text-xl opacity-90">
+                                  Vote on Monad testnet using the QR code below
+                                </p>
+                              </div>
+
+                              {/* Voting QR Code */}
+                              <div className="text-center">
+                                <h3 className="text-2xl font-bold mb-6 text-foreground">
+                                  🗳️ Scan QR Code to Vote On-Chain
+                                </h3>
+                                <div className="flex justify-center">
+                                  <div className="bg-white p-4 rounded-lg border-4 border-blue-500">
+                                    <img
+                                      src={battle.voting_qr_data}
+                                      alt="Voting QR Code"
+                                      className="w-96 h-96"
+                                      onError={(e) => {
+                                        const target = e.target as HTMLImageElement;
+                                        target.src = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMzg0IiBoZWlnaHQ9IjM4NCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSIjZjNmNGY2Ii8+PHRleHQgeD0iNTAlIiB5PSI1MCUiIGZvbnQtZmFtaWx5PSJBcmlhbCIgZm9udC1zaXplPSIxOCIgZmlsbD0iIzZjNzI4MCIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZHk9Ii4zZW0iPlZvdGluZyBRUiBDb2RlPC90ZXh0Pjwvc3ZnPg==';
+                                      }}
+                                    />
+                                  </div>
+                                </div>
+                                <p className="text-lg text-muted-foreground mt-4 max-w-2xl mx-auto">
+                                  Scan this QR code with your mobile device to connect your Monad wallet and vote for your favorite AI-generated art!
+                                </p>
+                              </div>
+                            </div>
+                          ) : (
+                            <div className="text-center mt-8">
+                              <Badge variant="default" className="text-xl px-6 py-3 bg-green-600">
+                                🗳️ Ready for Voting Phase
+                              </Badge>
+                              <p className="text-lg text-muted-foreground mt-4">
+                                The voting QR code will be generated soon for audience participation.
+                              </p>
+                            </div>
+                          )}
                         </CardContent>
                       </Card>
                     )}

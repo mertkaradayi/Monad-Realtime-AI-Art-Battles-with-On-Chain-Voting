@@ -2,6 +2,7 @@ import { exec } from 'child_process';
 import { promisify } from 'util';
 import { config } from '../config/config.js';
 import { Battle } from '../database/types/database.js';
+import { QRGeneratorService } from './qr-generator.js';
 
 const execAsync = promisify(exec);
 
@@ -278,7 +279,7 @@ export class ContractDeploymentService {
   /**
    * Generate QR code data for voting
    */
-  static generateVotingQRData(battle: Battle): string {
+  static async generateVotingQRData(battle: Battle): Promise<string> {
     if (!this.contractAddress) {
       throw new Error('Contract not deployed. Please deploy the contract first.');
     }
@@ -297,7 +298,9 @@ export class ContractDeploymentService {
       votingUrl: `${process.env.FRONTEND_URL || 'http://localhost:3000'}/vote/${battle.id}`,
     };
 
-    return JSON.stringify(votingData);
+    // Generate QR code image with voting data
+    const qrDataString = JSON.stringify(votingData);
+    return await QRGeneratorService.generateVotingQRFromData(qrDataString);
   }
 
   /**
