@@ -232,11 +232,11 @@ export type CompositeTypes<
   }
     ? keyof DatabaseWithoutInternals[PublicCompositeTypeNameOrOptions["schema"]]["CompositeTypes"]
     : never = never,
-> = DefaultSchemaTableNameOrOptions extends {
+> = PublicCompositeTypeNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
   ? DatabaseWithoutInternals[PublicCompositeTypeNameOrOptions["schema"]]["CompositeTypes"][CompositeTypeName]
-  : DefaultSchemaTableNameOrOptions extends keyof DefaultSchema["CompositeTypes"]
+  : PublicCompositeTypeNameOrOptions extends keyof DefaultSchema["CompositeTypes"]
     ? DefaultSchema["CompositeTypes"][PublicCompositeTypeNameOrOptions]
     : never
 
@@ -255,7 +255,8 @@ export const Constants = {
   },
 } as const
 
-// Type aliases for convenience
-export type Battle = Database['public']['Tables']['battles']['Row']
-export type BattleInsert = Database['public']['Tables']['battles']['Insert']
-export type BattleUpdate = Database['public']['Tables']['battles']['Update']
+// Type aliases for easier usage
+export type Battle = Tables<'battles'>
+export type BattleInsert = TablesInsert<'battles'>
+export type BattleUpdate = TablesUpdate<'battles'>
+export type BattleStatus = Enums<'battle_status'>
