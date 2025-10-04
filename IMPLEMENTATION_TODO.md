@@ -267,22 +267,23 @@ contract BattleVoting {
 ### **Technical Stack Requirements**
 
 #### **Smart Contract Development**
-- **Solidity**: For contract development
-- **Hardhat/Foundry**: For compilation and testing
-- **Monad SDK**: For Monad-specific deployment
-- **OpenZeppelin**: For secure contract patterns
+- **Solidity**: For contract development (^0.8.20)
+- **Foundry**: For compilation, testing, and deployment (forge, cast, anvil)
+- **OpenZeppelin Contracts**: For secure contract patterns (AccessControl, Governor patterns)
+- **Monad Testnet**: Target blockchain for deployment
 
 #### **Frontend Integration**
-- **Web3.js/Ethers.js**: For contract interaction
-- **Privy**: For Monad wallet connection
-- **React Query/SWR**: For real-time contract state polling
-- **QR Code Library**: For voting QR generation
+- **Ethers.js v6**: For contract interaction and Web3 functionality
+- **Privy**: For Monad wallet connection and authentication
+- **TanStack Query**: For real-time contract state polling and caching
+- **QR Code Library**: For voting QR generation (qrcode.js)
+- **React**: For UI components with shadcn/ui
 
 #### **Backend Services**
-- **Contract Deployment Service**: Deploy voting contracts per battle
+- **Foundry Scripts**: Deploy voting contracts per battle
 - **Monad RPC**: Connect to Monad testnet endpoints
 - **Event Listening**: Listen for voting events and results
-- **Gas Optimization**: Efficient transaction handling
+- **Gas Optimization**: Efficient transaction handling with Foundry
 
 ### **Performance Requirements**
 - **Voting Window**: 60 seconds maximum
@@ -297,6 +298,164 @@ contract BattleVoting {
 - **Access Control**: Only battle participants and voters can interact
 - **Gas Limit**: Optimize for reasonable gas costs
 - **Event Logging**: Comprehensive event logging for transparency
+
+## 🔧 **TECH STACK BREAKDOWN**
+
+### **Why These Tools?**
+
+#### **Foundry (Smart Contract Development)**
+- **Purpose**: Fast, portable toolkit for Ethereum application development
+- **Key Features**: Forge (testing), Cast (EVM interaction), Anvil (local development)
+- **Advantages**: Rust-based performance, comprehensive testing framework, gas optimization
+- **Use Case**: Compile, test, and deploy BattleVoting contracts on Monad testnet
+
+#### **Ethers.js v6 (Frontend Web3)**
+- **Purpose**: Complete Ethereum library for contract interaction
+- **Key Features**: Contract abstraction, transaction handling, event listening
+- **Advantages**: TypeScript support, modern async/await patterns, comprehensive API
+- **Use Case**: Connect frontend to voting contracts, handle wallet interactions
+
+#### **TanStack Query (Real-time State Management)**
+- **Purpose**: Powerful data fetching and state management for React
+- **Key Features**: Automatic caching, background refetching, optimistic updates
+- **Advantages**: Real-time polling, error handling, loading states
+- **Use Case**: Poll contract state every 2 seconds for live vote counts
+
+#### **OpenZeppelin Contracts (Security Patterns)**
+- **Purpose**: Library for secure smart contract development
+- **Key Features**: AccessControl, Governor patterns, battle-tested security
+- **Advantages**: Industry standard, audited contracts, gas optimization
+- **Use Case**: Implement secure voting logic with access control
+
+#### **Privy (Wallet Connection)**
+- **Purpose**: Authentication and wallet connection for Web3 apps
+- **Key Features**: Social login, wallet connection, user management
+- **Advantages**: User-friendly onboarding, multiple wallet support
+- **Use Case**: Connect users to Monad testnet for voting
+
+#### **QR Code Library (Voting Access)**
+- **Purpose**: Generate QR codes for voting contract access
+- **Key Features**: High-resolution QR generation, custom styling
+- **Advantages**: Easy mobile scanning, customizable appearance
+- **Use Case**: Generate voting QR codes with contract addresses
+
+## 🛠️ **IMPLEMENTATION GUIDE**
+
+### **Step 1: Foundry Setup**
+```bash
+# Install Foundry
+curl -L https://foundry.paradigm.xyz | bash
+foundryup
+
+# Initialize Foundry project
+forge init battle-voting-contracts
+cd battle-voting-contracts
+
+# Install OpenZeppelin contracts
+forge install OpenZeppelin/openzeppelin-contracts
+
+# Configure foundry.toml for Monad testnet
+```
+
+### **Step 2: Smart Contract Development**
+```bash
+# Create BattleVoting contract
+forge create src/BattleVoting.sol:BattleVoting \
+  --rpc-url $MONAD_TESTNET_RPC \
+  --private-key $PRIVATE_KEY \
+  --constructor-args $BATTLE_ID $PARTICIPANT1 $PARTICIPANT2
+
+# Test contract
+forge test --match-contract BattleVoting
+
+# Deploy with script
+forge script script/DeployBattleVoting.s.sol:DeployBattleVoting \
+  --rpc-url $MONAD_TESTNET_RPC \
+  --private-key $PRIVATE_KEY \
+  --broadcast
+```
+
+### **Step 3: Frontend Integration**
+```bash
+# Install dependencies
+npm install ethers@^6.0.0 @tanstack/react-query qrcode
+npm install @privy-io/react-auth @privy-io/wagmi
+
+# Configure TanStack Query for contract polling
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      refetchInterval: 2000, // Poll every 2 seconds
+      staleTime: 1000,
+    },
+  },
+});
+```
+
+### **Step 4: Backend Contract Deployment**
+```typescript
+// Deploy voting contract per battle
+const deployVotingContract = async (battleId: string, participants: string[]) => {
+  const contract = await ethers.deployContract("BattleVoting", [
+    battleId,
+    participants[0],
+    participants[1],
+    Math.floor(Date.now() / 1000) + 60 // 60 seconds from now
+  ]);
+  
+  await contract.waitForDeployment();
+  return contract.target;
+};
+```
+
+### **Step 5: Real-time Contract State Polling**
+```typescript
+// Use TanStack Query for real-time updates
+const useVoteCounts = (contractAddress: string, battleId: string) => {
+  return useQuery({
+    queryKey: ['voteCounts', contractAddress, battleId],
+    queryFn: async () => {
+      const contract = new ethers.Contract(contractAddress, ABI, provider);
+      const [participant1Votes, participant2Votes] = await contract.getResults(battleId);
+      return { participant1Votes, participant2Votes };
+    },
+    refetchInterval: 2000, // Poll every 2 seconds
+    enabled: !!contractAddress,
+  });
+};
+```
+
+### **Step 6: QR Code Generation**
+```typescript
+// Generate voting QR code with contract address
+const generateVotingQR = (contractAddress: string, battleId: string) => {
+  const qrData = `monad://voting?contract=${contractAddress}&battleId=${battleId}`;
+  return QRCode.toDataURL(qrData, { width: 400, margin: 2 });
+};
+```
+
+### **Step 7: Gas Optimization**
+```solidity
+// Optimize contract for high throughput
+contract BattleVoting {
+    // Use packed structs for gas efficiency
+    struct Battle {
+        uint128 participant1Votes;
+        uint128 participant2Votes;
+        uint64 startTime;
+        uint64 endTime;
+        bool votingEnded;
+    }
+    
+    // Use events instead of storage for vote tracking
+    event VoteCast(uint256 indexed battleId, address indexed voter, uint256 participant);
+    
+    // Batch operations when possible
+    function batchVote(uint256[] calldata battleIds, uint256[] calldata participants) external {
+        // Batch voting logic
+    }
+}
+```
 
 ## 🎬 **HACKATHON DEMO REQUIREMENTS**
 
@@ -333,11 +492,13 @@ contract BattleVoting {
 **Next Feature to Implement**: Feature 6 - On-Chain Voting Contract Deployment
 
 **Implementation Priority**: 
-1. **Smart Contract Development** - Create BattleVoting contract for Monad testnet
-2. **Monad Integration** - Set up Monad testnet RPC and deployment tools
-3. **Contract Deployment Service** - Deploy voting contracts per battle
-4. **QR Code Generation** - Generate voting QR with contract address
-5. **On-Chain Voting Interface** - Build frontend for direct contract interaction
+1. **Foundry Setup** - Install and configure Foundry for smart contract development
+2. **Smart Contract Development** - Create BattleVoting contract with OpenZeppelin patterns
+3. **Monad Integration** - Set up Monad testnet RPC and deployment tools
+4. **Frontend Web3 Integration** - Build Ethers.js + TanStack Query interface
+5. **Contract Deployment Service** - Deploy voting contracts per battle
+6. **QR Code Generation** - Generate voting QR with contract address
+7. **Real-time Polling** - Implement contract state polling for live updates
 
 **Last Updated**: January 3, 2025
 

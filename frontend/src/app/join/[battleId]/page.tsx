@@ -38,6 +38,9 @@ interface Battle {
   participant1_generation_error: string | null
   participant2_generation_error: string | null
   image_generation_status: 'pending' | 'generating' | 'completed' | 'failed' | null
+  voting_qr_data: string | null
+  total_votes: number | null
+  winner_wallet: string | null
 }
 
 export default function JoinBattlePage() {
@@ -59,6 +62,8 @@ export default function JoinBattlePage() {
   const submissionTimerRef = useRef<ReturnType<typeof setInterval> | null>(null)
   const [imageGenerationProgress, setImageGenerationProgress] = useState(0)
   const [showImageGenerationLoading, setShowImageGenerationLoading] = useState(false)
+  const [contractInfo, setContractInfo] = useState<any>(null)
+  const [isLoadingContractInfo, setIsLoadingContractInfo] = useState(false)
 
   // Fetch battle details and auto-join if possible
   useEffect(() => {
@@ -66,6 +71,24 @@ export default function JoinBattlePage() {
       fetchBattle()
     }
   }, [battleId, ready, authenticated])
+
+  // Fetch contract info when battle status changes to 'voting'
+  useEffect(() => {
+    if (battle && battle.status === 'voting' && battle.voting_qr_data) {
+      fetchContractInfo()
+    }
+  }, [battle?.status, battle?.voting_qr_data])
+
+  // Poll contract info every 3 seconds when in voting phase
+  useEffect(() => {
+    if (battle && battle.status === 'voting' && battle.voting_qr_data) {
+      const interval = setInterval(() => {
+        fetchContractInfo()
+      }, 3000) // Poll every 3 seconds
+
+      return () => clearInterval(interval)
+    }
+  }, [battle?.status, battle?.voting_qr_data])
 
   const canJoin = () => {
     if (!battle || !authenticated || !user?.wallet?.address) return false
@@ -329,6 +352,23 @@ export default function JoinBattlePage() {
       }
     } finally {
       if (!silent) setIsLoading(false)
+    }
+  }
+
+  const fetchContractInfo = async () => {
+    if (!battle || battle.status !== 'voting') return
+    
+    try {
+      setIsLoadingContractInfo(true)
+      const result = await api.getContractInfo(battleId)
+      
+      if (result.success) {
+        setContractInfo(result.data)
+      }
+    } catch (err) {
+      console.error('Error fetching contract info:', err)
+    } finally {
+      setIsLoadingContractInfo(false)
     }
   }
 
@@ -1371,14 +1411,114 @@ export default function JoinBattlePage() {
                     </div>
 
                     {/* Voting Phase Status */}
-                    <div className="text-center">
-                      <Badge variant="default" className="text-xl px-6 py-3 bg-green-600">
-                        🗳️ Ready for Voting Phase
-                      </Badge>
-                      <p className="text-lg text-muted-foreground mt-4">
-                        The voting QR code will be generated soon for audience participation.
-                      </p>
-                    </div>
+                    {battle.status === 'voting' && battle.voting_qr_data ? (
+                      <div className="space-y-8">
+                        {/* On-Chain Voting Status Banner */}
+                        <div className="text-center bg-gradient-to-r from-blue-500 to-purple-600 text-white p-8 rounded-lg">
+                          <div className="text-6xl mb-4">⛓️</div>
+                          <h2 className="text-4xl font-bold mb-2">
+                            ON-CHAIN VOTING PHASE
+                          </h2>
+                          <p className="text-xl opacity-90">
+                            Vote on Monad testnet using the QR code below
+                          </p>
+                        </div>
+
+                        {/* Voting QR Code */}
+                        <div className="text-center">
+                          <h3 className="text-2xl font-bold mb-6 text-foreground">
+                            🗳️ Scan QR Code to Vote On-Chain
+                          </h3>
+                          <div className="flex justify-center">
+                            <div className="bg-white p-4 rounded-lg border-4 border-blue-500">
+                              <img
+                                src={battle.voting_qr_data}
+                                alt="Voting QR Code"
+                                className="w-96 h-96"
+                                onError={(e) => {
+                                  const target = e.target as HTMLImageElement;
+                                  target.src = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMzg0IiBoZWlnaHQ9IjM4NCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSIjZjNmNGY2Ii8+PHRleHQgeD0iNTAlIiB5PSI1MCUiIGZvbnQtZmFtaWx5PSJBcmlhbCIgZm9udC1zaXplPSIxOCIgZmlsbD0iIzZjNzI4MCIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZHk9Ii4zZW0iPlZvdGluZyBRUiBDb2RlPC90ZXh0Pjwvc3ZnPg==';
+                                }}
+                              />
+                            </div>
+                          </div>
+                          <p className="text-lg text-muted-foreground mt-4 max-w-2xl mx-auto">
+                            Scan this QR code with your mobile device to connect your Monad wallet and vote for your favorite AI-generated art!
+                          </p>
+                        </div>
+
+                        {/* Live Vote Counts */}
+                        {contractInfo && (
+                          <div className="bg-gradient-to-r from-green-500 to-blue-500 text-white p-8 rounded-lg">
+                            <h3 className="text-2xl font-bold mb-6 text-center">🗳️ Live Vote Counts</h3>
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                              <div className="text-center">
+                                <div className="text-4xl font-bold mb-2">
+                                  {contractInfo.battle?.participant1Votes || 0}
+                                </div>
+                                <p className="text-lg opacity-90">Participant 1 Votes</p>
+                              </div>
+                              <div className="text-center">
+                                <div className="text-4xl font-bold mb-2">
+                                  {contractInfo.battle?.participant2Votes || 0}
+                                </div>
+                                <p className="text-lg opacity-90">Participant 2 Votes</p>
+                              </div>
+                            </div>
+                            <div className="text-center mt-6">
+                              <p className="text-lg opacity-90">
+                                Total Votes: <span className="font-bold">{contractInfo.battle?.totalVotes || 0}</span>
+                              </p>
+                            </div>
+                          </div>
+                        )}
+
+                        {/* Contract Information */}
+                        <div className="bg-muted p-6 rounded-lg max-w-4xl mx-auto">
+                          <h3 className="text-xl font-semibold mb-4 text-center">🔗 On-Chain Contract Information</h3>
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+                            <div>
+                              <p className="font-medium text-muted-foreground">Network:</p>
+                              <p className="text-foreground">Monad Testnet</p>
+                            </div>
+                            <div>
+                              <p className="font-medium text-muted-foreground">Chain ID:</p>
+                              <p className="text-foreground">10143</p>
+                            </div>
+                            {contractInfo?.contractAddress && (
+                              <div className="md:col-span-2">
+                                <p className="font-medium text-muted-foreground">Contract Address:</p>
+                                <p className="text-foreground break-all font-mono text-xs">
+                                  {contractInfo.contractAddress}
+                                </p>
+                              </div>
+                            )}
+                            <div className="md:col-span-2">
+                              <p className="font-medium text-muted-foreground">Explorer:</p>
+                              <p className="text-foreground break-all">
+                                <a 
+                                  href="https://testnet.monadexplorer.com" 
+                                  target="_blank" 
+                                  rel="noopener noreferrer"
+                                  className="text-blue-600 hover:underline"
+                                >
+                                  https://testnet.monadexplorer.com
+                                </a>
+                              </p>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="text-center">
+                        <Badge variant="default" className="text-xl px-6 py-3 bg-green-600">
+                          🗳️ Ready for Voting Phase
+                        </Badge>
+                        <p className="text-lg text-muted-foreground mt-4">
+                          The voting QR code will be generated soon for audience participation.
+                        </p>
+                      </div>
+                    )}
                   </div>
                 </CardContent>
               </Card>

@@ -16,6 +16,9 @@ router.get('/my-battles', ...authenticateWallet, BattleController.getBattlesByCr
 // Get battle by ID
 router.get('/:id', BattleController.getBattle);
 
+// Get contract information and voting instructions for a battle
+router.get('/:id/contract-info', BattleController.getContractInfo);
+
 // Join battle
 router.post('/:id/join', ...authenticateWallet, BattleController.joinBattle);
 

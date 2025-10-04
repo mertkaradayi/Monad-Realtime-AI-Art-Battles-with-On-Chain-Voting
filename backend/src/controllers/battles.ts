@@ -3,6 +3,7 @@ import { supabaseAdmin, config } from '../config/config.js';
 import { BattleConceptService } from '../services/battle-concept.js';
 import { QRGeneratorService } from '../services/qr-generator.js';
 import { FalService } from '../services/fal.js';
+import { ContractDeploymentService } from '../services/contract-deployment.js';
 import { Battle, BattleInsert } from '../database/types/database.js';
 
 export class BattleController {
@@ -72,6 +73,80 @@ export class BattleController {
         success: false,
         error: 'Failed to create battle',
         ...(includeDetails ? { message: error.message } : {})
+      });
+    }
+  }
+
+  /**
+   * Get contract information and voting instructions for a battle
+   */
+  static async getContractInfo(req: Request, res: Response): Promise<void> {
+    try {
+      const { id: battleId } = req.params;
+
+      if (!battleId) {
+        res.status(400).json({
+          success: false,
+          error: 'Battle ID is required',
+        });
+        return;
+      }
+
+      // Get battle details
+      const { data: battle, error } = await supabaseAdmin
+        .from('battles')
+        .select('*')
+        .eq('id', battleId)
+        .single();
+
+      if (error || !battle) {
+        res.status(404).json({
+          success: false,
+          error: 'Battle not found',
+        });
+        return;
+      }
+
+      // Check if contract is deployed
+      if (!ContractDeploymentService.isDeployed()) {
+        res.status(503).json({
+          success: false,
+          error: 'Contract not deployed yet',
+        });
+        return;
+      }
+
+      // Get contract information
+      const contractAddress = ContractDeploymentService.getContractAddress();
+      const deploymentInfo = ContractDeploymentService.getDeploymentInfo();
+      const votingQRData = battle.voting_qr_data;
+      const instructions = ContractDeploymentService.getContractInteractionInstructions(battle);
+
+      res.json({
+        success: true,
+        data: {
+          contractAddress,
+          deploymentInfo,
+          votingQRData: votingQRData ? JSON.parse(votingQRData) : null,
+          instructions,
+          battle: {
+            id: battle.id,
+            concept: battle.concept,
+            participant1: battle.participant1_wallet,
+            participant2: battle.participant2_wallet,
+            participant1ImageUrl: battle.participant1_image_url,
+            participant2ImageUrl: battle.participant2_image_url,
+            status: battle.status,
+            totalVotes: battle.total_votes,
+            winner: battle.winner_wallet,
+          }
+        }
+      });
+    } catch (error) {
+      console.error('Failed to get contract info:', error);
+      res.status(500).json({
+        success: false,
+        error: 'Failed to get contract information',
       });
     }
   }
@@ -563,6 +638,55 @@ export class BattleController {
       }
 
       console.log(`Successfully generated images for battle ${battleId}`);
+
+      // Deploy contract and create battle on-chain for voting
+      try {
+        console.log(`🚀 Starting contract deployment for battle ${battleId}...`);
+        
+        // Deploy contract if not already deployed
+        if (!ContractDeploymentService.isDeployed()) {
+          await ContractDeploymentService.deployContract();
+        }
+
+        // Get the updated battle with image URLs
+        const { data: updatedBattle, error: fetchError } = await supabaseAdmin
+          .from('battles')
+          .select('*')
+          .eq('id', battleId)
+          .single();
+
+        if (fetchError || !updatedBattle) {
+          throw new Error('Failed to fetch updated battle data');
+        }
+
+        // Create battle on contract
+        const contractAddress = await ContractDeploymentService.createBattleOnContract(updatedBattle);
+        
+        // Generate voting QR code with contract information
+        const votingQRData = ContractDeploymentService.generateVotingQRData(updatedBattle);
+        
+        // Update battle with voting QR data and contract address
+        const { error: qrUpdateError } = await supabaseAdmin
+          .from('battles')
+          .update({
+            voting_qr_data: votingQRData,
+            status: 'voting'
+          })
+          .eq('id', battleId);
+
+        if (qrUpdateError) {
+          throw qrUpdateError;
+        }
+
+        console.log(`✅ Contract deployment and voting setup completed for battle ${battleId}`);
+        console.log(`📍 Contract Address: ${contractAddress}`);
+        console.log(`🔗 Battle is now in voting phase`);
+        
+      } catch (contractError) {
+        console.error(`❌ Contract deployment failed for battle ${battleId}:`, contractError);
+        // Don't throw here - image generation succeeded, contract deployment is optional
+        // We can still proceed with the battle without on-chain voting
+      }
     } catch (error) {
       console.error(`Failed to generate images for battle ${battleId}:`, error);
       const failedTime = new Date().toISOString();

@@ -121,4 +121,15 @@ export const api = {
     
     return handleApiResponse(response);
   },
+
+  // Get contract information for voting
+  async getContractInfo(battleId: string) {
+    const headers = await getAuthHeaders();
+    const response = await fetch(buildUrl(`/api/battles/${battleId}/contract-info`), {
+      method: 'GET',
+      headers,
+    });
+    
+    return handleApiResponse(response);
+  },
 };
