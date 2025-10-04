@@ -1,13 +1,13 @@
 [build]
   base = "frontend"
   command = "npm run build"
-  publish = ".next"
+  publish = "frontend/out"
 
 [build.environment]
   NODE_VERSION = "18"
   NPM_VERSION = "10"
 
-# Next.js specific redirects
+# Next.js static export redirects for client-side routing
 [[redirects]]
   from = "/*"
   to = "/index.html"
