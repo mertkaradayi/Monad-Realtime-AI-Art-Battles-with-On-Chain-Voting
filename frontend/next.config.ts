@@ -19,8 +19,6 @@ const nextConfig: NextConfig = {
     // Enable modern bundling for better performance
     esmExternals: true,
   },
-  // Configure for Netlify's edge runtime
-  runtime: 'nodejs',
 };
 
 export default nextConfig;
