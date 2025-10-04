@@ -1,5 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { usePrivy } from '@privy-io/react-auth';
+import { usePrivy, useWallets } from '@privy-io/react-auth';
 import { ethers } from 'ethers';
 import React from 'react';
 import { 
@@ -17,6 +17,7 @@ import {
 // Hook for contract interactions
 export const useContract = (contractAddress: string) => {
   const { user, getAccessToken } = usePrivy();
+  const { wallets } = useWallets();
   const queryClient = useQueryClient();
   
   const provider = createProvider();
@@ -32,17 +33,23 @@ export const useContract = (contractAddress: string) => {
   // Set up signer if user is connected
   React.useEffect(() => {
     const setupSigner = async () => {
-      if (user?.wallet?.address && contractAddress && contract) {
+      if (user?.wallet?.address && contractAddress && contract && wallets.length > 0) {
         try {
-          // Get the Privy wallet signer
-          const privyWallet = user.wallet;
+          // Find the wallet that matches the user's address
+          const wallet = wallets.find(w => w.address === user.wallet?.address);
           
-          // Create a proper signer from Privy wallet
-          if (privyWallet && (privyWallet as any).ethereum) {
-            // Create signer from ethereum provider
-            const ethersProvider = new ethers.BrowserProvider((privyWallet as any).ethereum);
+          if (wallet) {
+            console.log('Found wallet for address:', user.wallet?.address);
+            // Get the EIP-1193 provider from the wallet
+            const ethereumProvider = await wallet.getEthereumProvider();
+            
+            // Create ethers provider and signer
+            const ethersProvider = new ethers.BrowserProvider(ethereumProvider);
             const signer = await ethersProvider.getSigner();
             contract.setSigner(signer);
+            console.log('Wallet signer setup successful');
+          } else {
+            console.warn('No wallet found for address:', user.wallet?.address, 'Available wallets:', wallets.map(w => w.address));
           }
         } catch (error) {
           console.error('Failed to setup wallet signer:', error);
@@ -51,7 +58,7 @@ export const useContract = (contractAddress: string) => {
     };
 
     setupSigner();
-  }, [user?.wallet?.address, contractAddress, contract]);
+  }, [user?.wallet?.address, contractAddress, contract, wallets]);
 
   return {
     contract,

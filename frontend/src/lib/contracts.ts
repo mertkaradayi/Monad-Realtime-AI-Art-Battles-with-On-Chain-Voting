@@ -156,7 +156,10 @@ export class BattleVotingContract {
 
   // Write operations (require signer)
   async castVote(battleId: string, participantAddress: string): Promise<ethers.TransactionResponse> {
+    console.log('castVote called with:', { battleId, participantAddress, hasSigner: !!this.signer });
+    
     if (!this.signer) {
+      console.error('No signer available for castVote');
       throw new Error('Wallet not connected. Please connect your wallet to vote.');
     }
 
