@@ -12,6 +12,7 @@ import { Badge } from '@/components/ui/badge'
 import { Toaster } from '@/components/ui/sonner'
 import { toast } from 'sonner'
 import { api } from '@/lib/api'
+import { useBattlePolling } from '@/hooks/useBattlePolling'
 
 interface Battle {
   id: string
@@ -32,9 +33,8 @@ export default function JoinBattlePage() {
   const [isLoading, setIsLoading] = useState(false)
   const [isJoining, setIsJoining] = useState(false)
   const [error, setError] = useState<string | null>(null)
-  const pollingRef = useRef<NodeJS.Timeout | null>(null)
-  const [isPolling, setIsPolling] = useState(false)
   const autoJoinAttemptedRef = useRef<string | null>(null)
+  const [autoJoinInProgress, setAutoJoinInProgress] = useState(false)
 
   // Fetch battle details and auto-join if possible
   useEffect(() => {
@@ -61,50 +61,26 @@ export default function JoinBattlePage() {
   // Auto-join when authenticated, battle loaded, and eligible
   useEffect(() => {
     if (!battle || !authenticated || !user?.wallet?.address) return
-    if (!canJoin() || isParticipant() || isJoining) return
+    if (!canJoin() || isParticipant() || isJoining || autoJoinInProgress) return
 
     const key = `${battle.id}:${user.wallet.address}`
     if (autoJoinAttemptedRef.current === key) return
     autoJoinAttemptedRef.current = key
 
-    handleJoinBattle()
-  }, [battle?.id, battle?.status, battle?.participant1_wallet, battle?.participant2_wallet, authenticated, user?.wallet?.address, isJoining])
+    // Set auto-join in progress to prevent multiple simultaneous attempts
+    setAutoJoinInProgress(true)
+    handleJoinBattle().finally(() => {
+      setAutoJoinInProgress(false)
+    })
+  }, [battle?.id, battle?.status, battle?.participant1_wallet, battle?.participant2_wallet, authenticated, user?.wallet?.address, isJoining, autoJoinInProgress])
 
-  // Poll for battle updates when battle is in waiting state
-  useEffect(() => {
-    const shouldPoll = Boolean(battle && battle.status === 'waiting' && isParticipant())
-
-    if (shouldPoll && !pollingRef.current) {
-      pollingRef.current = setInterval(() => {
-        fetchBattle(true)
-      }, 3000)
-      setIsPolling(true)
-    }
-
-    if (!shouldPoll && pollingRef.current) {
-      clearInterval(pollingRef.current)
-      pollingRef.current = null
-      setIsPolling(false)
-    }
-
-    return () => {
-      if (pollingRef.current) {
-        clearInterval(pollingRef.current)
-        pollingRef.current = null
-        setIsPolling(false)
-      }
-    }
-  }, [battle?.status, isParticipant()])
-
-  // Cleanup polling on unmount (safety)
-  useEffect(() => {
-    return () => {
-      if (pollingRef.current) {
-        clearInterval(pollingRef.current)
-        pollingRef.current = null
-      }
-    }
-  }, [])
+  // Use coordinated polling hook
+  const { isPolling } = useBattlePolling({
+    battleId: battle?.id || null,
+    enabled: Boolean(battle && battle.status === 'waiting' && isParticipant()),
+    interval: 3000,
+    onUpdate: () => fetchBattle(true)
+  })
 
   const fetchBattle = async (silent: boolean = false) => {
     try {
@@ -205,8 +181,10 @@ export default function JoinBattlePage() {
         } catch (_) {
           // ignore secondary fetch errors
         }
+        
+        // If we get here, the join actually failed
         setError(result.error || 'Failed to join battle')
-        toast.error('Failed to join battle')
+        toast.error(result.error || 'Failed to join battle')
       }
     } catch (err) {
       const error = err as Error;
@@ -234,6 +212,8 @@ export default function JoinBattlePage() {
         } catch (_) {
           // ignore secondary fetch errors
         }
+        
+        // If we get here, the join actually failed
         setError('Failed to join battle')
         console.error('Error joining battle:', err)
         toast.error('Failed to join battle, please try again')

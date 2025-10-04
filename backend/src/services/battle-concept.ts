@@ -39,14 +39,26 @@ Generate ONE unique concept that follows this format. Return only the concept, n
       // Remove any quotes or extra formatting
       concept = concept.replace(/^["']|["']$/g, '');
       
+      // Remove any HTML tags or special characters that could be harmful
+      concept = concept.replace(/<[^>]*>/g, '');
+      concept = concept.replace(/[<>\"'&]/g, '');
+      
+      // Remove any newlines and extra whitespace
+      concept = concept.replace(/\s+/g, ' ').trim();
+      
       // Ensure it ends with "..."
       if (!concept.endsWith('...')) {
         concept += '...';
       }
       
-      // Validate length
+      // Validate length and content
       if (concept.length > 100) {
         concept = concept.substring(0, 97) + '...';
+      }
+      
+      // Additional validation - ensure it's not empty or just "..."
+      if (concept.length <= 3 || concept === '...') {
+        throw new Error('Generated concept is too short or invalid');
       }
       
       return concept;

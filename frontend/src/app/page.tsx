@@ -12,6 +12,7 @@ import { Badge } from '@/components/ui/badge'
 import { Toaster } from '@/components/ui/sonner'
 import { toast } from 'sonner'
 import { api } from '@/lib/api'
+import { useBattlePolling } from '@/hooks/useBattlePolling'
 
 interface Battle {
   id: string
@@ -30,49 +31,19 @@ export default function Home() {
   const [battle, setBattle] = useState<Battle | null>(null)
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
-  const pollingRef = useRef<NodeJS.Timeout | null>(null)
-  const [isPolling, setIsPolling] = useState(false)
 
   // Check if current user is the battle creator
   const isBattleCreator = () => {
     return battle && user?.wallet?.address && battle.creator_wallet === user.wallet.address
   }
 
-  // Poll for battle updates when user is the creator and battle is in waiting state
-  useEffect(() => {
-    const shouldPoll = Boolean(battle && isBattleCreator() && battle.status === 'waiting')
-
-    if (shouldPoll && !pollingRef.current) {
-      pollingRef.current = setInterval(() => {
-        fetchBattleStatus(true)
-      }, 3000)
-      setIsPolling(true)
-    }
-
-    if (!shouldPoll && pollingRef.current) {
-      clearInterval(pollingRef.current)
-      pollingRef.current = null
-      setIsPolling(false)
-    }
-
-    return () => {
-      if (pollingRef.current) {
-        clearInterval(pollingRef.current)
-        pollingRef.current = null
-        setIsPolling(false)
-      }
-    }
-  }, [battle?.id, battle?.status, user?.wallet?.address])
-
-  // Cleanup polling on unmount
-  useEffect(() => {
-    return () => {
-      if (pollingRef.current) {
-        clearInterval(pollingRef.current)
-        pollingRef.current = null
-      }
-    }
-  }, [])
+  // Use coordinated polling hook
+  const { isPolling } = useBattlePolling({
+    battleId: battle?.id || null,
+    enabled: Boolean(battle && isBattleCreator() && battle.status === 'waiting'),
+    interval: 3000,
+    onUpdate: () => fetchBattleStatus(true)
+  })
 
   // Fetch battle status (for polling)
   const fetchBattleStatus = async (silent: boolean = false) => {
@@ -120,7 +91,7 @@ export default function Home() {
           // This prevents the QR code from disappearing during polling
           return {
             ...newBattle,
-            joiningQR: prev.joiningQR || newBattle.joining_qr_data
+            joiningQR: prev.joiningQR || newBattle.joining_qr_data || prev.joining_qr_data
           }
         })
       }

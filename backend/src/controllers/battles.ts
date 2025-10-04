@@ -161,6 +161,30 @@ export class BattleController {
         return;
       }
 
+      // First, get the battle to check if user is the creator
+      const { data: battle, error: fetchError } = await supabaseAdmin
+        .from('battles')
+        .select('*')
+        .eq('id', id)
+        .single();
+      
+      if (fetchError || !battle) {
+        res.status(404).json({
+          success: false,
+          error: 'Battle not found'
+        });
+        return;
+      }
+
+      // Prevent battle creator from joining their own battle
+      if (battle.creator_wallet === walletAddress) {
+        res.status(400).json({
+          success: false,
+          error: 'Battle creator cannot join their own battle'
+        });
+        return;
+      }
+
       // ATOMIC OPERATION: Try to join as participant 1 first
       let { data: updatedBattle, error: updateError } = await supabaseAdmin
         .from('battles')
@@ -171,11 +195,11 @@ export class BattleController {
         .eq('id', id)
         .eq('status', 'waiting')
         .is('participant1_wallet', null)
-        .or(`participant2_wallet.is.null,participant2_wallet.neq.${walletAddress}`)
+        .or(`participant2_wallet.is.null,participant2_wallet.neq.${walletAddress}`) // Handle NULL properly
         .select()
         .single();
 
-      // If participant1 update failed, check if user is already participant1
+      // If participant1 update failed, check if user is already a participant
       if (updateError || !updatedBattle) {
         const { data: currentBattle } = await supabaseAdmin
           .from('battles')
@@ -183,8 +207,9 @@ export class BattleController {
           .eq('id', id)
           .single();
         
-        if (currentBattle?.participant1_wallet === walletAddress) {
-          // User is already participant1, return success
+        if (currentBattle?.participant1_wallet === walletAddress || 
+            currentBattle?.participant2_wallet === walletAddress) {
+          // User is already a participant, return success
           res.json({ 
             success: true,
             data: currentBattle
@@ -195,28 +220,7 @@ export class BattleController {
 
       // If participant1 slot is taken, try participant2 slot
       if (updateError || !updatedBattle) {
-        const { data: battle, error: fetchError } = await supabaseAdmin
-          .from('battles')
-          .select('*')
-          .eq('id', id)
-          .single();
-        
-        if (fetchError || !battle) {
-          res.status(404).json({
-            success: false,
-            error: 'Battle not found'
-          });
-          return;
-        }
-
-        // Check if user is already a participant
-        if (battle.participant1_wallet === walletAddress || battle.participant2_wallet === walletAddress) {
-          res.status(400).json({
-            success: false,
-            error: 'Already a participant in this battle'
-          });
-          return;
-        }
+        // Use the battle we already fetched above
 
         // Check if battle is full
         if (battle.participant1_wallet && battle.participant2_wallet) {
@@ -277,6 +281,7 @@ export class BattleController {
         }
 
         updatedBattle = result.data;
+        updateError = null; // Clear the error since participant2 join succeeded
       }
       
       if (updateError) {
