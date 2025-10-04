@@ -15,6 +15,7 @@ import { Toaster } from '@/components/ui/sonner'
 import { toast } from 'sonner'
 import { api } from '@/lib/api'
 import { useBattlePolling } from '@/hooks/useBattlePolling'
+import { ImageGenerationLoading } from '@/components/ImageGenerationLoading'
 
 interface Battle {
   id: string
@@ -26,6 +27,9 @@ interface Battle {
   participant2_wallet: string | null
   participant1_prompt: string | null
   participant2_prompt: string | null
+  participant1_image_url: string | null
+  participant2_image_url: string | null
+  image_generation_status: 'pending' | 'generating' | 'completed' | 'failed' | null
 }
 
 export default function JoinBattlePage() {
@@ -45,6 +49,8 @@ export default function JoinBattlePage() {
   const [showPromptPreviews, setShowPromptPreviews] = useState(false)
   const [submissionTimer, setSubmissionTimer] = useState<number | null>(null)
   const submissionTimerRef = useRef<ReturnType<typeof setInterval> | null>(null)
+  const [imageGenerationProgress, setImageGenerationProgress] = useState(0)
+  const [showImageGenerationLoading, setShowImageGenerationLoading] = useState(false)
 
   // Fetch battle details and auto-join if possible
   useEffect(() => {
@@ -132,6 +138,30 @@ export default function JoinBattlePage() {
     onUpdate: () => fetchBattle(true)
   })
 
+  // Handle image generation status changes
+  useEffect(() => {
+    if (battle?.image_generation_status === 'generating') {
+      setShowImageGenerationLoading(true)
+      setImageGenerationProgress(0)
+      
+      // Simulate progress updates (in real implementation, this would come from WebSocket or polling)
+      const progressInterval = setInterval(() => {
+        setImageGenerationProgress(prev => {
+          if (prev >= 90) return prev // Don't go to 100% until actually completed
+          return prev + Math.random() * 10
+        })
+      }, 1000)
+
+      return () => clearInterval(progressInterval)
+    } else if (battle?.image_generation_status === 'completed' || battle?.image_generation_status === 'failed') {
+      setImageGenerationProgress(100)
+      // Hide loading after a delay to show completion state
+      setTimeout(() => {
+        setShowImageGenerationLoading(false)
+      }, 3000)
+    }
+  }, [battle?.image_generation_status])
+
   // Timer effect for submission countdown
   useEffect(() => {
     const isActive = battle?.status === 'active'
@@ -166,7 +196,7 @@ export default function JoinBattlePage() {
           clearInterval(submissionTimerRef.current)
           submissionTimerRef.current = null
         }
-        toast.warning('⏰ Time\'s up!', {
+        toast.warning('⏰ Time&apos;s up!', {
           description: 'Prompt submission time has expired',
           duration: 5000
         })
@@ -423,7 +453,7 @@ export default function JoinBattlePage() {
               ⚔️ Join Battle
             </h1>
             <p className="text-muted-foreground text-lg">
-              You've scanned a battle QR code!
+              You&apos;ve scanned a battle QR code!
             </p>
           </div>
           <div className="ml-4 flex items-center gap-2">
@@ -470,7 +500,7 @@ export default function JoinBattlePage() {
               <CardContent className="space-y-4">
                 <div className="bg-muted p-4 rounded-lg">
                   <h3 className="font-semibold mb-2">Battle Concept:</h3>
-                  <p className="text-foreground">"{battle.concept}"</p>
+                  <p className="text-foreground">&ldquo;{battle.concept}&rdquo;</p>
                 </div>
                 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
@@ -548,13 +578,13 @@ export default function JoinBattlePage() {
                               {showPromptPreviews ? (
                                 <div className="bg-green-100 p-3 rounded-lg border border-green-300">
                                   <p className="text-sm text-foreground">
-                                    "{getParticipantPrompt(1)}"
+                                    &ldquo;{getParticipantPrompt(1)}&rdquo;
                                   </p>
                                 </div>
                               ) : (
                                 <div className="bg-green-100 p-3 rounded-lg border border-green-300">
                                   <p className="text-sm text-foreground">
-                                    "{truncatePrompt(getParticipantPrompt(1)!, 80)}"
+                                    &ldquo;{truncatePrompt(getParticipantPrompt(1)!, 80)}&rdquo;
                                   </p>
                                 </div>
                               )}
@@ -598,13 +628,13 @@ export default function JoinBattlePage() {
                               {showPromptPreviews ? (
                                 <div className="bg-green-100 p-3 rounded-lg border border-green-300">
                                   <p className="text-sm text-foreground">
-                                    "{getParticipantPrompt(2)}"
+                                    &ldquo;{getParticipantPrompt(2)}&rdquo;
                                   </p>
                                 </div>
                               ) : (
                                 <div className="bg-green-100 p-3 rounded-lg border border-green-300">
                                   <p className="text-sm text-foreground">
-                                    "{truncatePrompt(getParticipantPrompt(2)!, 80)}"
+                                    &ldquo;{truncatePrompt(getParticipantPrompt(2)!, 80)}&rdquo;
                                   </p>
                                 </div>
                               )}
@@ -709,7 +739,7 @@ export default function JoinBattlePage() {
                     )}
                   </Button>
                   <p className="text-sm text-muted-foreground mt-4">
-                    You'll become a participant and help complete the battle concept
+                    You&apos;ll become a participant and help complete the battle concept
                   </p>
                 </CardContent>
               </Card>
@@ -733,7 +763,7 @@ export default function JoinBattlePage() {
                     <div className="bg-muted p-6 rounded-lg max-w-2xl mx-auto">
                       <h3 className="text-2xl font-semibold mb-4">Battle Concept:</h3>
                       <p className="text-xl text-foreground font-medium">
-                        "{battle.concept}"
+                        &ldquo;{battle.concept}&rdquo;
                       </p>
                     </div>
                     
@@ -766,7 +796,7 @@ export default function JoinBattlePage() {
               <Alert>
                 <AlertDescription>
                   <div className="text-center">
-                    <h3 className="font-semibold mb-2">🎉 You're in this battle!</h3>
+                    <h3 className="font-semibold mb-2">🎉 You&apos;re in this battle!</h3>
                     <p>You are a participant in this battle. The battle will begin once both participants have joined.</p>
                   </div>
                 </AlertDescription>
@@ -810,7 +840,7 @@ export default function JoinBattlePage() {
                     <div className="bg-muted p-6 rounded-lg max-w-4xl mx-auto">
                       <h3 className="text-2xl font-semibold mb-4 text-center">Battle Concept (Fixed):</h3>
                       <p className="text-xl text-foreground font-medium text-center">
-                        "{battle.concept}"
+                        &ldquo;{battle.concept}&rdquo;
                       </p>
                     </div>
 
@@ -912,7 +942,7 @@ export default function JoinBattlePage() {
                             </div>
                             {battle.participant1_wallet === user?.wallet?.address && (
                               <Badge variant="default" className="text-lg px-4 py-2">
-                                🎯 That's You!
+                                🎯 That&apos;s You!
                               </Badge>
                             )}
                             <div className="mt-4">
@@ -946,7 +976,7 @@ export default function JoinBattlePage() {
                             </div>
                             {battle.participant2_wallet === user?.wallet?.address && (
                               <Badge variant="default" className="text-lg px-4 py-2">
-                                🎯 That's You!
+                                🎯 That&apos;s You!
                               </Badge>
                             )}
                             <div className="mt-4">
@@ -1010,7 +1040,7 @@ export default function JoinBattlePage() {
                               }
                             </p>
                             <p className="text-foreground font-medium">
-                              "{battle.participant1_prompt}"
+                              &ldquo;{battle.participant1_prompt}&rdquo;
                             </p>
                           </div>
                         </CardContent>
@@ -1030,7 +1060,7 @@ export default function JoinBattlePage() {
                               }
                             </p>
                             <p className="text-foreground font-medium">
-                              "{battle.participant2_prompt}"
+                              &ldquo;{battle.participant2_prompt}&rdquo;
                             </p>
                           </div>
                         </CardContent>
@@ -1079,13 +1109,24 @@ export default function JoinBattlePage() {
             <CardContent className="text-center py-12">
               <h2 className="text-xl font-semibold mb-4">Battle Not Found</h2>
               <p className="text-muted-foreground mb-6">
-                The battle you're trying to join doesn't exist or has been removed.
+                The battle you&apos;re trying to join doesn&apos;t exist or has been removed.
               </p>
               <Button onClick={() => window.location.href = '/'}>
                 Back to Home
               </Button>
             </CardContent>
           </Card>
+        )}
+        
+        {/* Image Generation Loading Overlay */}
+        {showImageGenerationLoading && battle && (
+          <ImageGenerationLoading
+            battleConcept={battle.concept}
+            participant1Prompt={battle.participant1_prompt || undefined}
+            participant2Prompt={battle.participant2_prompt || undefined}
+            progress={imageGenerationProgress}
+            status={battle.image_generation_status === 'pending' ? 'generating' : (battle.image_generation_status as 'generating' | 'completed' | 'failed') || 'generating'}
+          />
         )}
         
         <Toaster />

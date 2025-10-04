@@ -21,9 +21,12 @@ export type Database = {
           created_at: string | null
           creator_wallet: string | null
           id: string
+          image_generation_status: string | null
           joining_qr_data: string | null
+          participant1_image_url: string | null
           participant1_prompt: string | null
           participant1_wallet: string | null
+          participant2_image_url: string | null
           participant2_prompt: string | null
           participant2_wallet: string | null
           status: Database["public"]["Enums"]["battle_status"] | null
@@ -38,9 +41,12 @@ export type Database = {
           created_at?: string | null
           creator_wallet?: string | null
           id?: string
+          image_generation_status?: string | null
           joining_qr_data?: string | null
+          participant1_image_url?: string | null
           participant1_prompt?: string | null
           participant1_wallet?: string | null
+          participant2_image_url?: string | null
           participant2_prompt?: string | null
           participant2_wallet?: string | null
           status?: Database["public"]["Enums"]["battle_status"] | null
@@ -55,9 +61,12 @@ export type Database = {
           created_at?: string | null
           creator_wallet?: string | null
           id?: string
+          image_generation_status?: string | null
           joining_qr_data?: string | null
+          participant1_image_url?: string | null
           participant1_prompt?: string | null
           participant1_wallet?: string | null
+          participant2_image_url?: string | null
           participant2_prompt?: string | null
           participant2_wallet?: string | null
           status?: Database["public"]["Enums"]["battle_status"] | null
@@ -76,7 +85,13 @@ export type Database = {
       [_ in never]: never
     }
     Enums: {
-      battle_status: "waiting" | "active" | "voting" | "completed" | "cancelled" | "prompts_submitted"
+      battle_status:
+        | "waiting"
+        | "active"
+        | "voting"
+        | "completed"
+        | "cancelled"
+        | "prompts_submitted"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -204,13 +219,19 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
-      battle_status: ["waiting", "active", "voting", "completed", "cancelled", "prompts_submitted"],
+      battle_status: [
+        "waiting",
+        "active",
+        "voting",
+        "completed",
+        "cancelled",
+        "prompts_submitted",
+      ],
     },
   },
 } as const
 
-// Convenience types for the battles table
-export type Battle = Tables<'battles'>
-export type BattleInsert = TablesInsert<'battles'>
-export type BattleUpdate = TablesUpdate<'battles'>
-export type BattleStatus = Enums<'battle_status'>
+// Type aliases for convenience
+export type Battle = Database['public']['Tables']['battles']['Row']
+export type BattleInsert = Database['public']['Tables']['battles']['Insert']
+export type BattleUpdate = Database['public']['Tables']['battles']['Update']

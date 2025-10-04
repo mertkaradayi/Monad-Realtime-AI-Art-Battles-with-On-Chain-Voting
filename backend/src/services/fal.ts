@@ -74,4 +74,63 @@ export class FalService {
   static isValidModel(model: string): boolean {
     return this.getAvailableModels().includes(model);
   }
+
+  /**
+   * Generate image using fal.ai gemini-25-flash-image model
+   */
+  static async generateImage(prompt: string): Promise<{ imageUrl: string; requestId: string }> {
+    try {
+      const result = await fal.subscribe('fal-ai/gemini-25-flash-image', {
+        input: {
+          prompt: prompt
+        },
+        logs: true,
+        onQueueUpdate: (update) => {
+          if (update.status === 'IN_PROGRESS') {
+            update.logs.map((log) => log.message).forEach(console.log);
+          }
+        },
+      });
+
+      // Extract image URL from result
+      const imageUrl = result.data?.images?.[0]?.url;
+      if (!imageUrl) {
+        throw new Error('No image URL returned from fal.ai');
+      }
+
+      return {
+        imageUrl,
+        requestId: result.requestId
+      };
+    } catch (error) {
+      console.error('Fal.ai image generation error:', error);
+      throw new Error(`Failed to generate image: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    }
+  }
+
+  /**
+   * Generate images for both participants in a battle
+   */
+  static async generateBattleImages(participant1Prompt: string, participant2Prompt: string): Promise<{
+    participant1ImageUrl: string;
+    participant2ImageUrl: string;
+    requestIds: string[];
+  }> {
+    try {
+      // Generate images in parallel for better performance
+      const [participant1Result, participant2Result] = await Promise.all([
+        this.generateImage(participant1Prompt),
+        this.generateImage(participant2Prompt)
+      ]);
+
+      return {
+        participant1ImageUrl: participant1Result.imageUrl,
+        participant2ImageUrl: participant2Result.imageUrl,
+        requestIds: [participant1Result.requestId, participant2Result.requestId]
+      };
+    } catch (error) {
+      console.error('Fal.ai battle image generation error:', error);
+      throw new Error(`Failed to generate battle images: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    }
+  }
 }

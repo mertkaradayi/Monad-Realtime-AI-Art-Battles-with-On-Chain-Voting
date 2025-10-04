@@ -15,6 +15,9 @@
 - **participant2_wallet**: VARCHAR(100) (Optional, Nullable, "Wallet address of second participant")
 - **participant1_prompt**: TEXT (Optional, Nullable, "Full prompt submitted by first participant (concept + completion)")
 - **participant2_prompt**: TEXT (Optional, Nullable, "Full prompt submitted by second participant (concept + completion)")
+- **participant1_image_url**: TEXT (Optional, Nullable, "URL of the generated image for participant 1")
+- **participant2_image_url**: TEXT (Optional, Nullable, "URL of the generated image for participant 2")
+- **image_generation_status**: TEXT (Default: 'pending', Values: pending, generating, completed, failed, "Status of image generation process")
 - **total_votes**: INTEGER (Default: 0, "Total number of votes cast")
 - **winner_wallet**: VARCHAR(100) (Optional, Nullable, "Wallet address of winner")
 - **completed_at**: TIMESTAMPTZ (Optional, Nullable, "When battle was completed")
@@ -94,6 +97,13 @@
 - Added frontend UI for prompt submission with large textarea and confirmation
 - Enables prompt submission workflow for AI art battle system
 - Battle status automatically updates to 'prompts_submitted' when both participants submit prompts
+
+### 2025-01-03 - Image Generation Feature
+- Added participant1_image_url and participant2_image_url columns to battles table
+- Added image_generation_status column with values: pending, generating, completed, failed
+- These fields store the URLs of generated images for each participant
+- Enables image generation workflow using fal.ai gemini-25-flash-image model
+- Image generation triggers automatically when both prompts are submitted
 
 ## Notes
 - This schema is managed via Supabase MCP tools

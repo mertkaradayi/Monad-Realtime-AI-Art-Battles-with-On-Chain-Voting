@@ -2,6 +2,7 @@ import { Request, Response } from 'express';
 import { supabaseAdmin, config } from '../config/config.js';
 import { BattleConceptService } from '../services/battle-concept.js';
 import { QRGeneratorService } from '../services/qr-generator.js';
+import { FalService } from '../services/fal.js';
 import { Battle, BattleInsert } from '../database/types/database.js';
 
 export class BattleController {
@@ -432,6 +433,7 @@ export class BattleController {
       if (otherParticipantPrompt) {
         // Both prompts are now submitted, update status to prompts_submitted
         updateData.status = 'prompts_submitted';
+        updateData.image_generation_status = 'generating';
       }
 
       const { data: updatedBattle, error: updateError } = await supabaseAdmin
@@ -455,7 +457,10 @@ export class BattleController {
       ) {
         const { data: statusSyncedBattle, error: statusUpdateError } = await supabaseAdmin
           .from('battles')
-          .update({ status: 'prompts_submitted' })
+          .update({ 
+            status: 'prompts_submitted',
+            image_generation_status: 'generating'
+          })
           .eq('id', id)
           .select()
           .single();
@@ -465,6 +470,29 @@ export class BattleController {
         }
 
         finalBattle = statusSyncedBattle;
+      }
+
+      // Trigger image generation if both prompts are submitted
+      if (
+        finalBattle.participant1_prompt &&
+        finalBattle.participant2_prompt &&
+        finalBattle.status === 'prompts_submitted'
+      ) {
+        // Start image generation asynchronously (don't await to avoid blocking response)
+        this.generateImagesForBattle(finalBattle.id, finalBattle.participant1_prompt, finalBattle.participant2_prompt)
+          .catch(error => {
+            console.error('Error generating images for battle:', finalBattle.id, error);
+            // Update battle status to failed
+            supabaseAdmin
+              .from('battles')
+              .update({ image_generation_status: 'failed' })
+              .eq('id', finalBattle.id)
+              .then(({ error: updateError }) => {
+                if (updateError) {
+                  console.error('Error updating battle status to failed:', updateError);
+                }
+              });
+          });
       }
       
       res.json({ 
@@ -484,6 +512,44 @@ export class BattleController {
         error: 'Failed to submit prompt',
         ...(includeDetails ? { message: error.message } : {})
       });
+    }
+  }
+
+  /**
+   * Generate images for a battle (private method called asynchronously)
+   */
+  private static async generateImagesForBattle(battleId: string, participant1Prompt: string, participant2Prompt: string): Promise<void> {
+    try {
+      console.log(`Starting image generation for battle ${battleId}`);
+      
+      // Generate images using fal.ai
+      const imageResults = await FalService.generateBattleImages(participant1Prompt, participant2Prompt);
+      
+      // Update battle with image URLs
+      const { error: updateError } = await supabaseAdmin
+        .from('battles')
+        .update({
+          participant1_image_url: imageResults.participant1ImageUrl,
+          participant2_image_url: imageResults.participant2ImageUrl,
+          image_generation_status: 'completed'
+        })
+        .eq('id', battleId);
+
+      if (updateError) {
+        throw updateError;
+      }
+
+      console.log(`Successfully generated images for battle ${battleId}`);
+    } catch (error) {
+      console.error(`Failed to generate images for battle ${battleId}:`, error);
+      
+      // Update battle status to failed
+      await supabaseAdmin
+        .from('battles')
+        .update({ image_generation_status: 'failed' })
+        .eq('id', battleId);
+      
+      throw error;
     }
   }
 }
