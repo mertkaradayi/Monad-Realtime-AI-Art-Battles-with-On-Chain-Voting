@@ -5,7 +5,7 @@
 ### Battles Table
 - **id**: UUID (Primary Key, Auto-generated with `gen_random_uuid()`)
 - **concept**: TEXT (Required, NOT NULL, "LLM-generated battle concept/theme")
-- **status**: battle_status ENUM (Default: 'waiting', Values: waiting, active, voting, completed, cancelled)
+- **status**: battle_status ENUM (Default: 'waiting', Values: waiting, active, voting, completed, cancelled, prompts_submitted)
 - **created_at**: TIMESTAMPTZ (Auto-generated with `NOW()`, Nullable)
 - **updated_at**: TIMESTAMPTZ (Auto-generated with `NOW()`, Nullable)
 - **joining_qr_data**: TEXT (Optional, Nullable, "QR code data for battle joining")
@@ -13,6 +13,8 @@
 - **creator_wallet**: VARCHAR(100) (Optional, Nullable, "Wallet address of battle creator")
 - **participant1_wallet**: VARCHAR(100) (Optional, Nullable, "Wallet address of first participant")
 - **participant2_wallet**: VARCHAR(100) (Optional, Nullable, "Wallet address of second participant")
+- **participant1_prompt**: TEXT (Optional, Nullable, "Full prompt submitted by first participant (concept + completion)")
+- **participant2_prompt**: TEXT (Optional, Nullable, "Full prompt submitted by second participant (concept + completion)")
 - **total_votes**: INTEGER (Default: 0, "Total number of votes cast")
 - **winner_wallet**: VARCHAR(100) (Optional, Nullable, "Wallet address of winner")
 - **completed_at**: TIMESTAMPTZ (Optional, Nullable, "When battle was completed")
@@ -83,6 +85,15 @@
 - Added check constraint to prevent same wallet in both participant slots
 - Implemented atomic database operations for battle joining
 - Ensures only the first 2 users can participate in each battle
+
+### 2025-01-03 - Prompt Submission Feature
+- Added participant1_prompt and participant2_prompt columns to battles table
+- These fields store the complete prompts (concept + user completion) for each participant
+- Added 'prompts_submitted' status to battle_status enum
+- Implemented prompt submission API endpoint (POST /api/battles/:id/submit-prompt)
+- Added frontend UI for prompt submission with large textarea and confirmation
+- Enables prompt submission workflow for AI art battle system
+- Battle status automatically updates to 'prompts_submitted' when both participants submit prompts
 
 ## Notes
 - This schema is managed via Supabase MCP tools

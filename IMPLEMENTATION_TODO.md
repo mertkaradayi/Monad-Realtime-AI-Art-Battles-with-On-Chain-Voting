@@ -39,18 +39,18 @@
 - [x] **QR Code Persistence**: Fixed QR code disappearing issue during polling
 - [x] **Test**: Host can see participants join in real-time, QR code stays visible
 
-### **Feature 4: Prompt Submission** 🚧 **NEXT TO IMPLEMENT**
-- [ ] **Database Schema**: Add prompt fields to battles table (participant1_prompt, participant2_prompt)
-- [ ] **Backend API**: Create prompt submission endpoint (`POST /api/battles/:id/submit-prompt`)
-- [ ] **Prompt Validation**: Ensure users can only submit prompts for their own participant slot
-- [ ] **UI for Participants**: Show battle concept as fixed prompt starter (e.g., "Elephant is on its foot in a ball...")
-- [ ] **Input Fields**: Large textarea for participants to complete the prompt (LARGE input fields)
-- [ ] **Concept Protection**: Users cannot modify the battle concept, only complete it
-- [ ] **Submission Logic**: Store full prompts in database (concept + user completion)
-- [ ] **Confirmation**: Show "Prompt submitted" confirmation (LARGE confirmation text)
-- [ ] **Status Updates**: Update battle status to "prompts_submitted" when both prompts are in
-- [ ] **Demo UI**: Side-by-side prompt submission with fixed concept and completion fields
-- [ ] **Test**: Can submit prompts, see confirmation, concept is fixed, both participants can submit
+### **Feature 4: Prompt Submission** ✅ **COMPLETED**
+- [x] **Database Schema**: Add prompt fields to battles table (participant1_prompt, participant2_prompt)
+- [x] **Backend API**: Create prompt submission endpoint (`POST /api/battles/:id/submit-prompt`)
+- [x] **Prompt Validation**: Ensure users can only submit prompts for their own participant slot
+- [x] **UI for Participants**: Show battle concept as fixed prompt starter (e.g., "Elephant is on its foot in a ball...")
+- [x] **Input Fields**: Large textarea for participants to complete the prompt (LARGE input fields)
+- [x] **Concept Protection**: Users cannot modify the battle concept, only complete it
+- [x] **Submission Logic**: Store full prompts in database (concept + user completion)
+- [x] **Confirmation**: Show "Prompt submitted" confirmation (LARGE confirmation text)
+- [x] **Status Updates**: Update battle status to "prompts_submitted" when both prompts are in
+- [x] **Demo UI**: Side-by-side prompt submission with fixed concept and completion fields
+- [x] **Test**: Can submit prompts, see confirmation, concept is fixed, both participants can submit
 
 #### **Host Dashboard Enhancements (Feature 4)**
 - [ ] Show per-participant prompt status (Pending/Submitted)
@@ -59,7 +59,7 @@
 - [ ] Add submission countdown/timer visible to audience
 - [ ] Toast notifications when each prompt is submitted
 
-### **Feature 5: Image Generation (fal.ai)**
+### **Feature 5: Image Generation (fal.ai)** 🚧 **NEXT TO IMPLEMENT**
 - [ ] When both prompts submitted, trigger image generation
 - [ ] Show "Generating images..." status (LARGE loading animation)
 - [ ] Generate images using fal.ai with full prompts (concept + user completion)

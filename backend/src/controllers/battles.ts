@@ -303,4 +303,124 @@ export class BattleController {
       });
     }
   }
+
+  /**
+   * Submit prompt for a battle participant
+   */
+  static async submitPrompt(req: Request, res: Response): Promise<void> {
+    try {
+      const { id } = req.params;
+      const { promptCompletion } = req.body;
+      const walletAddress = req.user?.wallet?.address;
+
+      if (!walletAddress) {
+        res.status(403).json({
+          success: false,
+          error: 'Wallet required',
+        });
+        return;
+      }
+
+      if (!promptCompletion || typeof promptCompletion !== 'string' || promptCompletion.trim().length === 0) {
+        res.status(400).json({
+          success: false,
+          error: 'Prompt completion is required',
+        });
+        return;
+      }
+
+      // Get the battle to check participant status and concept
+      const { data: battle, error: fetchError } = await supabaseAdmin
+        .from('battles')
+        .select('*')
+        .eq('id', id)
+        .single();
+      
+      if (fetchError || !battle) {
+        res.status(404).json({
+          success: false,
+          error: 'Battle not found'
+        });
+        return;
+      }
+
+      // Check if user is a participant
+      const isParticipant1 = battle.participant1_wallet === walletAddress;
+      const isParticipant2 = battle.participant2_wallet === walletAddress;
+      
+      if (!isParticipant1 && !isParticipant2) {
+        res.status(403).json({
+          success: false,
+          error: 'Only battle participants can submit prompts'
+        });
+        return;
+      }
+
+      // Check if battle is in active status (ready for prompt submission)
+      if (battle.status !== 'active') {
+        res.status(400).json({
+          success: false,
+          error: 'Battle is not in active status for prompt submission'
+        });
+        return;
+      }
+
+      // Check if user has already submitted a prompt
+      const existingPrompt = isParticipant1 ? battle.participant1_prompt : battle.participant2_prompt;
+      if (existingPrompt) {
+        res.status(400).json({
+          success: false,
+          error: 'You have already submitted a prompt for this battle'
+        });
+        return;
+      }
+
+      // Create the full prompt (concept + user completion)
+      const fullPrompt = `${battle.concept} ${promptCompletion.trim()}`;
+
+      // Update the appropriate participant prompt field
+      const updateData: any = {};
+      if (isParticipant1) {
+        updateData.participant1_prompt = fullPrompt;
+      } else {
+        updateData.participant2_prompt = fullPrompt;
+      }
+
+      // Check if both prompts are now submitted to update status
+      const otherParticipantPrompt = isParticipant1 ? battle.participant2_prompt : battle.participant1_prompt;
+      if (otherParticipantPrompt) {
+        // Both prompts are now submitted, update status to prompts_submitted
+        updateData.status = 'prompts_submitted';
+      }
+
+      const { data: updatedBattle, error: updateError } = await supabaseAdmin
+        .from('battles')
+        .update(updateData)
+        .eq('id', id)
+        .select()
+        .single();
+      
+      if (updateError) {
+        throw updateError;
+      }
+      
+      res.json({ 
+        success: true,
+        data: {
+          battle: updatedBattle,
+          message: 'Prompt submitted successfully',
+          fullPrompt: fullPrompt
+        }
+      });
+    } catch (err) {
+      const error = err as Error;
+      console.error('Error submitting prompt:', error);
+      const includeDetails = config.server.nodeEnv !== 'production';
+      res.status(500).json({ 
+        success: false,
+        error: 'Failed to submit prompt',
+        ...(includeDetails ? { message: error.message } : {})
+      });
+    }
+  }
 }

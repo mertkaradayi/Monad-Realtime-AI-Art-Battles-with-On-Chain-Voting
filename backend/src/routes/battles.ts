@@ -16,4 +16,7 @@ router.get('/:id', BattleController.getBattle);
 // Join battle
 router.post('/:id/join', ...authenticateWallet, BattleController.joinBattle);
 
+// Submit prompt for battle
+router.post('/:id/submit-prompt', ...authenticateWallet, BattleController.submitPrompt);
+
 export default router;

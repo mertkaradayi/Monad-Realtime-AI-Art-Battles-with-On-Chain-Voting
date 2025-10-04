@@ -22,7 +22,9 @@ export type Database = {
           creator_wallet: string | null
           id: string
           joining_qr_data: string | null
+          participant1_prompt: string | null
           participant1_wallet: string | null
+          participant2_prompt: string | null
           participant2_wallet: string | null
           status: Database["public"]["Enums"]["battle_status"] | null
           total_votes: number | null
@@ -37,7 +39,9 @@ export type Database = {
           creator_wallet?: string | null
           id?: string
           joining_qr_data?: string | null
+          participant1_prompt?: string | null
           participant1_wallet?: string | null
+          participant2_prompt?: string | null
           participant2_wallet?: string | null
           status?: Database["public"]["Enums"]["battle_status"] | null
           total_votes?: number | null
@@ -52,7 +56,9 @@ export type Database = {
           creator_wallet?: string | null
           id?: string
           joining_qr_data?: string | null
+          participant1_prompt?: string | null
           participant1_wallet?: string | null
+          participant2_prompt?: string | null
           participant2_wallet?: string | null
           status?: Database["public"]["Enums"]["battle_status"] | null
           total_votes?: number | null
@@ -70,7 +76,7 @@ export type Database = {
       [_ in never]: never
     }
     Enums: {
-      battle_status: "waiting" | "active" | "voting" | "completed" | "cancelled"
+      battle_status: "waiting" | "active" | "voting" | "completed" | "cancelled" | "prompts_submitted"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -198,12 +204,12 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
-      battle_status: ["waiting", "active", "voting", "completed", "cancelled"],
+      battle_status: ["waiting", "active", "voting", "completed", "cancelled", "prompts_submitted"],
     },
   },
 } as const
 
-// Convenience types for battles
+// Convenience types for the battles table
 export type Battle = Tables<'battles'>
 export type BattleInsert = TablesInsert<'battles'>
 export type BattleUpdate = TablesUpdate<'battles'>

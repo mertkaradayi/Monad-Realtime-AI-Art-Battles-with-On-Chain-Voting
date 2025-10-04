@@ -89,4 +89,20 @@ export const api = {
     
     return response.json();
   },
+
+  // Submit prompt for battle
+  async submitPrompt(id: string, promptCompletion: string) {
+    const headers = await getAuthHeaders();
+    const response = await fetch(buildUrl(`/api/battles/${id}/submit-prompt`), {
+      method: 'POST',
+      headers,
+      body: JSON.stringify({ promptCompletion }),
+    });
+    
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+    
+    return response.json();
+  },
 };

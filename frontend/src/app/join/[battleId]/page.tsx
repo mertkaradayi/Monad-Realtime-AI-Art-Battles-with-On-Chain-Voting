@@ -9,6 +9,8 @@ import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
+import { Textarea } from '@/components/ui/textarea'
+import { Label } from '@/components/ui/label'
 import { Toaster } from '@/components/ui/sonner'
 import { toast } from 'sonner'
 import { api } from '@/lib/api'
@@ -17,11 +19,13 @@ import { useBattlePolling } from '@/hooks/useBattlePolling'
 interface Battle {
   id: string
   concept: string
-  status: 'waiting' | 'active' | 'voting' | 'completed' | 'cancelled'
+  status: 'waiting' | 'active' | 'voting' | 'completed' | 'cancelled' | 'prompts_submitted'
   created_at: string
   creator_wallet: string
   participant1_wallet: string | null
   participant2_wallet: string | null
+  participant1_prompt: string | null
+  participant2_prompt: string | null
 }
 
 export default function JoinBattlePage() {
@@ -35,6 +39,9 @@ export default function JoinBattlePage() {
   const [error, setError] = useState<string | null>(null)
   const autoJoinAttemptedRef = useRef<string | null>(null)
   const [autoJoinInProgress, setAutoJoinInProgress] = useState(false)
+  const [promptCompletion, setPromptCompletion] = useState('')
+  const [isSubmittingPrompt, setIsSubmittingPrompt] = useState(false)
+  const [promptSubmitted, setPromptSubmitted] = useState(false)
 
   // Fetch battle details and auto-join if possible
   useEffect(() => {
@@ -58,6 +65,20 @@ export default function JoinBattlePage() {
            battle.participant2_wallet === user.wallet.address
   }
 
+  const hasSubmittedPrompt = () => {
+    if (!battle || !user?.wallet?.address) return false
+    const isParticipant1 = battle.participant1_wallet === user.wallet.address
+    return isParticipant1 ? !!battle.participant1_prompt : !!battle.participant2_prompt
+  }
+
+  const canSubmitPrompt = () => {
+    if (!battle || !user?.wallet?.address) return false
+    if (battle.status !== 'active') return false
+    if (!isParticipant()) return false
+    if (hasSubmittedPrompt()) return false
+    return true
+  }
+
   // Auto-join when authenticated, battle loaded, and eligible
   useEffect(() => {
     if (!battle || !authenticated || !user?.wallet?.address) return
@@ -77,7 +98,7 @@ export default function JoinBattlePage() {
   // Use coordinated polling hook
   const { isPolling } = useBattlePolling({
     battleId: battle?.id || null,
-    enabled: Boolean(battle && battle.status === 'waiting' && isParticipant()),
+    enabled: Boolean(battle && (battle.status === 'waiting' || battle.status === 'active') && isParticipant()),
     interval: 3000,
     onUpdate: () => fetchBattle(true)
   })
@@ -96,16 +117,26 @@ export default function JoinBattlePage() {
           if (!prev) return newBattle
 
           const statusChanged = prev.status === 'waiting' && newBattle.status === 'active'
+          const promptsSubmitted = prev.status === 'active' && newBattle.status === 'prompts_submitted'
           const anyChanged = (
             prev.status !== newBattle.status ||
             prev.participant1_wallet !== newBattle.participant1_wallet ||
             prev.participant2_wallet !== newBattle.participant2_wallet ||
-            prev.concept !== newBattle.concept
+            prev.concept !== newBattle.concept ||
+            prev.participant1_prompt !== newBattle.participant1_prompt ||
+            prev.participant2_prompt !== newBattle.participant2_prompt
           )
 
           if (statusChanged) {
             toast.success('🎉 Battle is now active!', {
               description: 'Both participants have joined. The battle begins!',
+              duration: 5000
+            })
+          }
+
+          if (promptsSubmitted) {
+            toast.success('🎨 All prompts submitted!', {
+              description: 'Both participants have submitted their prompts. Ready for the next phase!',
               duration: 5000
             })
           }
@@ -220,6 +251,48 @@ export default function JoinBattlePage() {
       }
     } finally {
       setIsJoining(false)
+    }
+  }
+
+  const handleSubmitPrompt = async () => {
+    if (!authenticated || !promptCompletion.trim()) {
+      toast.error('Please enter a prompt completion')
+      return
+    }
+
+    try {
+      setIsSubmittingPrompt(true)
+      setError(null)
+      
+      toast.info('Submitting prompt...')
+      
+      const result = await api.submitPrompt(battleId, promptCompletion.trim())
+      
+      if (result.success) {
+        // Update battle state immediately
+        setBattle(result.data.battle)
+        setPromptSubmitted(true)
+        
+        toast.success('🎨 PROMPT SUBMITTED!', {
+          description: 'Your prompt has been submitted successfully!',
+          duration: 5000
+        })
+      } else {
+        setError(result.error || 'Failed to submit prompt')
+        toast.error(result.error || 'Failed to submit prompt')
+      }
+    } catch (err) {
+      const error = err as Error;
+      if (error.message.includes('Authentication required')) {
+        setError('Please connect your wallet to submit prompts')
+        toast.error('Authentication required')
+      } else {
+        setError('Failed to submit prompt')
+        console.error('Error submitting prompt:', err)
+        toast.error('Failed to submit prompt, please try again')
+      }
+    } finally {
+      setIsSubmittingPrompt(false)
     }
   }
 
@@ -436,31 +509,111 @@ export default function JoinBattlePage() {
               </Alert>
             )}
 
-            {/* Active Battle - Split Screen Demo UI */}
+            {/* Active Battle - Prompt Submission UI */}
             {battle.status === 'active' && (
               <Card className="border-2 border-green-500">
                 <CardContent className="py-16">
                   <div className="space-y-8">
                     {/* Battle Status Header */}
                     <div className="text-center">
-                      <div className="text-6xl mb-4">⚔️</div>
+                      <div className="text-6xl mb-4">🎨</div>
                       <h2 className="text-4xl font-bold text-green-600 mb-2">
-                        BATTLE IS ACTIVE!
+                        PROMPT SUBMISSION PHASE
                       </h2>
                       <p className="text-xl text-muted-foreground">
-                        Both participants have joined. The battle is now in progress.
+                        Complete the battle concept with your creative prompt!
                       </p>
                     </div>
 
-                    {/* Battle Concept */}
+                    {/* Battle Concept - Fixed Starter */}
                     <div className="bg-muted p-6 rounded-lg max-w-4xl mx-auto">
-                      <h3 className="text-2xl font-semibold mb-4 text-center">Battle Concept:</h3>
+                      <h3 className="text-2xl font-semibold mb-4 text-center">Battle Concept (Fixed):</h3>
                       <p className="text-xl text-foreground font-medium text-center">
                         "{battle.concept}"
                       </p>
                     </div>
 
-                    {/* Split Screen Participants */}
+                    {/* Prompt Submission Form */}
+                    {isParticipant() && (
+                      <div className="max-w-4xl mx-auto">
+                        {canSubmitPrompt() ? (
+                          <Card className="border-2 border-blue-500">
+                            <CardHeader>
+                              <CardTitle className="text-2xl text-center text-blue-600">
+                                Complete Your Prompt
+                              </CardTitle>
+                            </CardHeader>
+                            <CardContent className="space-y-6">
+                              <div className="space-y-2">
+                                <Label htmlFor="prompt-completion" className="text-lg font-semibold">
+                                  Your Prompt Completion:
+                                </Label>
+                                <Textarea
+                                  id="prompt-completion"
+                                  placeholder="Complete the battle concept with your creative ideas..."
+                                  value={promptCompletion}
+                                  onChange={(e) => setPromptCompletion(e.target.value)}
+                                  className="min-h-32 text-lg"
+                                  disabled={isSubmittingPrompt}
+                                />
+                                <p className="text-sm text-muted-foreground">
+                                  The battle concept above will be combined with your completion to create the full prompt.
+                                </p>
+                              </div>
+                              
+                              <Button
+                                onClick={handleSubmitPrompt}
+                                disabled={isSubmittingPrompt || !promptCompletion.trim()}
+                                size="lg"
+                                className="w-full h-16 text-lg font-semibold"
+                              >
+                                {isSubmittingPrompt ? (
+                                  <div className="flex items-center gap-2">
+                                    <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
+                                    Submitting Prompt...
+                                  </div>
+                                ) : (
+                                  '🎨 Submit My Prompt'
+                                )}
+                              </Button>
+                            </CardContent>
+                          </Card>
+                        ) : hasSubmittedPrompt() ? (
+                          <Card className="border-2 border-green-500">
+                            <CardContent className="text-center py-12">
+                              <div className="space-y-6">
+                                <div className="text-6xl">✅</div>
+                                <h3 className="text-3xl font-bold text-green-600">
+                                  PROMPT SUBMITTED!
+                                </h3>
+                                <p className="text-xl text-muted-foreground">
+                                  Your prompt has been submitted successfully. Waiting for the other participant...
+                                </p>
+                                <Badge variant="default" className="text-lg px-4 py-2 bg-green-600">
+                                  ✅ Prompt Submitted
+                                </Badge>
+                              </div>
+                            </CardContent>
+                          </Card>
+                        ) : (
+                          <Card className="border-2 border-yellow-500">
+                            <CardContent className="text-center py-12">
+                              <div className="space-y-6">
+                                <div className="text-6xl">⏳</div>
+                                <h3 className="text-3xl font-bold text-yellow-600">
+                                  WAITING FOR PROMPT SUBMISSION
+                                </h3>
+                                <p className="text-xl text-muted-foreground">
+                                  Only battle participants can submit prompts.
+                                </p>
+                              </div>
+                            </CardContent>
+                          </Card>
+                        )}
+                      </div>
+                    )}
+
+                    {/* Split Screen Participants Status */}
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-6xl mx-auto">
                       {/* Participant 1 */}
                       <Card className="border-2 border-blue-500">
@@ -481,6 +634,17 @@ export default function JoinBattlePage() {
                                 🎯 That's You!
                               </Badge>
                             )}
+                            <div className="mt-4">
+                              {battle.participant1_prompt ? (
+                                <Badge variant="default" className="text-lg px-4 py-2 bg-green-600">
+                                  ✅ Prompt Submitted
+                                </Badge>
+                              ) : (
+                                <Badge variant="outline" className="text-lg px-4 py-2">
+                                  ⏳ Waiting for Prompt
+                                </Badge>
+                              )}
+                            </div>
                           </div>
                         </CardContent>
                       </Card>
@@ -504,6 +668,17 @@ export default function JoinBattlePage() {
                                 🎯 That's You!
                               </Badge>
                             )}
+                            <div className="mt-4">
+                              {battle.participant2_prompt ? (
+                                <Badge variant="default" className="text-lg px-4 py-2 bg-green-600">
+                                  ✅ Prompt Submitted
+                                </Badge>
+                              ) : (
+                                <Badge variant="outline" className="text-lg px-4 py-2">
+                                  ⏳ Waiting for Prompt
+                                </Badge>
+                              )}
+                            </div>
                           </div>
                         </CardContent>
                       </Card>
@@ -512,15 +687,79 @@ export default function JoinBattlePage() {
                     {/* Status Badge */}
                     <div className="flex items-center justify-center">
                       <Badge variant="default" className="text-xl px-6 py-3 bg-green-600">
-                        2/2 Participants Joined - Battle Active
+                        {battle.participant1_prompt && battle.participant2_prompt 
+                          ? "2/2 Prompts Submitted - Ready for Next Phase!" 
+                          : `${(battle.participant1_prompt ? 1 : 0) + (battle.participant2_prompt ? 1 : 0)}/2 Prompts Submitted`
+                        }
                       </Badge>
                     </div>
+                  </div>
+                </CardContent>
+              </Card>
+            )}
 
-                    {/* Next Phase Info */}
+            {/* Prompts Submitted Status */}
+            {battle.status === 'prompts_submitted' && (
+              <Card className="border-2 border-purple-500">
+                <CardContent className="py-16">
+                  <div className="space-y-8">
                     <div className="text-center">
-                      <p className="text-lg text-muted-foreground">
-                        🎨 Ready for prompt submission phase!
+                      <div className="text-6xl mb-4">🎉</div>
+                      <h2 className="text-4xl font-bold text-purple-600 mb-2">
+                        PROMPTS SUBMITTED!
+                      </h2>
+                      <p className="text-xl text-muted-foreground">
+                        Both participants have submitted their prompts. Ready for the next phase!
                       </p>
+                    </div>
+
+                    {/* Submitted Prompts Display */}
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-6xl mx-auto">
+                      {/* Participant 1 Prompt */}
+                      <Card className="border-2 border-blue-500">
+                        <CardHeader>
+                          <CardTitle className="text-xl text-blue-600">Participant 1 Prompt</CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                          <div className="bg-blue-50 p-4 rounded-lg">
+                            <p className="text-sm text-muted-foreground mb-2">
+                              {battle.participant1_wallet ? 
+                                `${battle.participant1_wallet.slice(0, 6)}...${battle.participant1_wallet.slice(-4)}` : 
+                                'Unknown'
+                              }
+                            </p>
+                            <p className="text-foreground font-medium">
+                              "{battle.participant1_prompt}"
+                            </p>
+                          </div>
+                        </CardContent>
+                      </Card>
+
+                      {/* Participant 2 Prompt */}
+                      <Card className="border-2 border-purple-500">
+                        <CardHeader>
+                          <CardTitle className="text-xl text-purple-600">Participant 2 Prompt</CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                          <div className="bg-purple-50 p-4 rounded-lg">
+                            <p className="text-sm text-muted-foreground mb-2">
+                              {battle.participant2_wallet ? 
+                                `${battle.participant2_wallet.slice(0, 6)}...${battle.participant2_wallet.slice(-4)}` : 
+                                'Unknown'
+                              }
+                            </p>
+                            <p className="text-foreground font-medium">
+                              "{battle.participant2_prompt}"
+                            </p>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    </div>
+
+                    <div className="flex items-center justify-center">
+                      <Badge variant="default" className="text-xl px-6 py-3 bg-purple-600">
+                        2/2 Prompts Submitted - Ready for Image Generation!
+                      </Badge>
                     </div>
                   </div>
                 </CardContent>
