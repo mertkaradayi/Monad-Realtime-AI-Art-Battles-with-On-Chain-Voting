@@ -2,8 +2,10 @@ import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
   // Configuration for Netlify deployment
+  output: 'export',
+  trailingSlash: true,
   images: {
-    domains: ['localhost'],
+    domains: ['localhost', 'battle-semantic-backend-production.up.railway.app'],
     unoptimized: true
   },
   // Disable ESLint during build to fix deployment

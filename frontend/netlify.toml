@@ -1,17 +1,22 @@
 [build]
   base = "frontend"
   command = "npm run build"
-  publish = ".next"
+  publish = "out"
 
 [build.environment]
-  NODE_VERSION = "18"
+  NODE_VERSION = "20"
   NPM_VERSION = "10"
   NEXT_TELEMETRY_DISABLED = "1"
+  NEXT_PUBLIC_API_BASE_URL = "https://battle-semantic-backend-production.up.railway.app"
+  NEXT_PUBLIC_PRIVY_APP_ID = "cmg9wa8pf02bbl50cguzu5v5u"
+  NEXT_PUBLIC_SUPABASE_URL = "https://hhlponznilkvphidgkat.supabase.co"
+  NEXT_PUBLIC_SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhobHBvbnpuaWxrdnBoaWRna2F0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTkzODM0MDksImV4cCI6MjA3NDk1OTQwOX0.XOy6T6_sR-lFFE7HCn0feoSDoEzm4_ifEUk20NfJjRI"
 
 # Netlify automatically configures Next.js 15.5.4 with OpenNext adapter
 # No explicit plugin configuration needed for modern Next.js versions
 
-# Redirects for Next.js App Router client-side routing
+# Redirects for Next.js App Router - handle client-side routing
+# This redirect should be the last one and catch all unmatched routes
 [[redirects]]
   from = "/*"
   to = "/index.html"
