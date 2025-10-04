@@ -84,7 +84,7 @@ export function getServerConfig(): ServerConfig {
     // Default CORS origins based on environment
     corsOrigins = nodeEnv === 'production' 
       ? ['https://your-production-domain.com'] // Update this for production
-      : ['http://localhost:3000', 'http://localhost:3001'];
+      : ['http://localhost:3000', 'http://localhost:3001', 'http://localhost:3002', 'http://localhost:3003'];
   }
 
   return {

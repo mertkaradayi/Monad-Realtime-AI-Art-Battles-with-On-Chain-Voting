@@ -42,6 +42,9 @@ export default function JoinBattlePage() {
   const [promptCompletion, setPromptCompletion] = useState('')
   const [isSubmittingPrompt, setIsSubmittingPrompt] = useState(false)
   const [promptSubmitted, setPromptSubmitted] = useState(false)
+  const [showPromptPreviews, setShowPromptPreviews] = useState(false)
+  const [submissionTimer, setSubmissionTimer] = useState<number | null>(null)
+  const [timerInterval, setTimerInterval] = useState<NodeJS.Timeout | null>(null)
 
   // Fetch battle details and auto-join if possible
   useEffect(() => {
@@ -79,6 +82,32 @@ export default function JoinBattlePage() {
     return true
   }
 
+  const isHost = () => {
+    if (!battle || !user?.wallet?.address) return false
+    return battle.creator_wallet === user.wallet.address
+  }
+
+  const getParticipantStatus = (participantNumber: 1 | 2) => {
+    if (!battle) return 'Unknown'
+    const prompt = participantNumber === 1 ? battle.participant1_prompt : battle.participant2_prompt
+    return prompt ? 'Submitted' : 'Pending'
+  }
+
+  const getParticipantPrompt = (participantNumber: 1 | 2) => {
+    if (!battle) return null
+    return participantNumber === 1 ? battle.participant1_prompt : battle.participant2_prompt
+  }
+
+  const truncatePrompt = (prompt: string, maxLength: number = 100) => {
+    if (prompt.length <= maxLength) return prompt
+    return prompt.substring(0, maxLength) + '...'
+  }
+
+  const canStartImageGeneration = () => {
+    if (!battle) return false
+    return battle.participant1_prompt && battle.participant2_prompt
+  }
+
   // Auto-join when authenticated, battle loaded, and eligible
   useEffect(() => {
     if (!battle || !authenticated || !user?.wallet?.address) return
@@ -98,10 +127,58 @@ export default function JoinBattlePage() {
   // Use coordinated polling hook
   const { isPolling } = useBattlePolling({
     battleId: battle?.id || null,
-    enabled: Boolean(battle && (battle.status === 'waiting' || battle.status === 'active') && isParticipant()),
+    enabled: Boolean(battle && (battle.status === 'waiting' || battle.status === 'active' || battle.status === 'prompts_submitted')),
     interval: 3000,
     onUpdate: () => fetchBattle(true)
   })
+
+  // Timer effect for submission countdown
+  useEffect(() => {
+    if (battle?.status === 'active' && !canStartImageGeneration()) {
+      // Start 50-second countdown timer
+      const startTime = Date.now()
+      const duration = 50 * 1000 // 50 seconds in milliseconds
+      
+      const interval = setInterval(() => {
+        const elapsed = Date.now() - startTime
+        const remaining = Math.max(0, duration - elapsed)
+        setSubmissionTimer(remaining)
+        
+        if (remaining === 0) {
+          clearInterval(interval)
+          setTimerInterval(null)
+          toast.warning('⏰ Time\'s up!', {
+            description: 'Prompt submission time has expired',
+            duration: 5000
+          })
+        }
+      }, 1000)
+      
+      setTimerInterval(interval)
+      setSubmissionTimer(duration)
+    } else {
+      // Clear timer if battle is not active or both prompts are submitted
+      if (timerInterval) {
+        clearInterval(timerInterval)
+        setTimerInterval(null)
+      }
+      setSubmissionTimer(null)
+    }
+
+    return () => {
+      if (timerInterval) {
+        clearInterval(timerInterval)
+        setTimerInterval(null)
+      }
+    }
+  }, [battle?.status, battle?.participant1_prompt, battle?.participant2_prompt])
+
+  // Format timer display
+  const formatTimer = (milliseconds: number) => {
+    const minutes = Math.floor(milliseconds / 60000)
+    const seconds = Math.floor((milliseconds % 60000) / 1000)
+    return `${minutes}:${seconds.toString().padStart(2, '0')}`
+  }
 
   const fetchBattle = async (silent: boolean = false) => {
     try {
@@ -118,6 +195,8 @@ export default function JoinBattlePage() {
 
           const statusChanged = prev.status === 'waiting' && newBattle.status === 'active'
           const promptsSubmitted = prev.status === 'active' && newBattle.status === 'prompts_submitted'
+          const participant1PromptSubmitted = !prev.participant1_prompt && newBattle.participant1_prompt
+          const participant2PromptSubmitted = !prev.participant2_prompt && newBattle.participant2_prompt
           const anyChanged = (
             prev.status !== newBattle.status ||
             prev.participant1_wallet !== newBattle.participant1_wallet ||
@@ -131,6 +210,20 @@ export default function JoinBattlePage() {
             toast.success('🎉 Battle is now active!', {
               description: 'Both participants have joined. The battle begins!',
               duration: 5000
+            })
+          }
+
+          if (participant1PromptSubmitted) {
+            toast.success('🎨 Participant 1 submitted their prompt!', {
+              description: 'One prompt down, one to go!',
+              duration: 4000
+            })
+          }
+
+          if (participant2PromptSubmitted) {
+            toast.success('🎨 Participant 2 submitted their prompt!', {
+              description: 'Both prompts are now submitted!',
+              duration: 4000
             })
           }
 
@@ -385,6 +478,169 @@ export default function JoinBattlePage() {
               </CardContent>
             </Card>
 
+            {/* Host Dashboard */}
+            {isHost() && battle.status === 'active' && (
+              <Card className="border-2 border-orange-500">
+                <CardHeader>
+                  <CardTitle className="text-xl text-orange-600 flex items-center gap-2">
+                    🎯 Host Dashboard
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-6">
+                  {/* Submission Timer - More Prominent */}
+                  {submissionTimer !== null && (
+                    <div className="text-center bg-orange-50 p-6 rounded-lg border-2 border-orange-200">
+                      <div className="text-5xl font-bold text-orange-600 mb-2">
+                        ⏰ {formatTimer(submissionTimer)}
+                      </div>
+                      <p className="text-lg text-orange-700 font-semibold">
+                        Time remaining for prompt submission
+                      </p>
+                      {submissionTimer < 10000 && (
+                        <p className="text-red-600 font-bold mt-2">
+                          ⚠️ HURRY UP! Time is running out!
+                        </p>
+                      )}
+                    </div>
+                  )}
+
+                  {/* Participant Status Grid */}
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {/* Participant 1 Status */}
+                    <Card className={`border-2 ${getParticipantStatus(1) === 'Submitted' ? 'border-green-500 bg-green-50' : 'border-blue-500'}`}>
+                      <CardContent className="p-4">
+                        <div className="space-y-3">
+                          <div className="flex items-center justify-between">
+                            <h3 className="font-semibold text-blue-600">Participant 1</h3>
+                            <Badge 
+                              variant={getParticipantStatus(1) === 'Submitted' ? 'default' : 'outline'}
+                              className={getParticipantStatus(1) === 'Submitted' ? 'bg-green-600 text-white text-lg px-4 py-2' : 'text-lg px-4 py-2'}
+                            >
+                              {getParticipantStatus(1) === 'Submitted' ? '✅ SUBMITTED' : '⏳ PENDING'}
+                            </Badge>
+                          </div>
+                          <div className="text-sm text-muted-foreground">
+                            {battle.participant1_wallet ? 
+                              `${battle.participant1_wallet.slice(0, 6)}...${battle.participant1_wallet.slice(-4)}` : 
+                              'Not joined'
+                            }
+                          </div>
+                          {getParticipantPrompt(1) && (
+                            <div className="space-y-2">
+                              <div className="flex items-center justify-between">
+                                <span className="text-sm font-medium text-green-700">✅ Prompt Submitted:</span>
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={() => setShowPromptPreviews(!showPromptPreviews)}
+                                >
+                                  {showPromptPreviews ? 'Hide' : 'Show'}
+                                </Button>
+                              </div>
+                              {showPromptPreviews ? (
+                                <div className="bg-green-100 p-3 rounded-lg border border-green-300">
+                                  <p className="text-sm text-foreground">
+                                    "{getParticipantPrompt(1)}"
+                                  </p>
+                                </div>
+                              ) : (
+                                <div className="bg-green-100 p-3 rounded-lg border border-green-300">
+                                  <p className="text-sm text-foreground">
+                                    "{truncatePrompt(getParticipantPrompt(1)!, 80)}"
+                                  </p>
+                                </div>
+                              )}
+                            </div>
+                          )}
+                        </div>
+                      </CardContent>
+                    </Card>
+
+                    {/* Participant 2 Status */}
+                    <Card className={`border-2 ${getParticipantStatus(2) === 'Submitted' ? 'border-green-500 bg-green-50' : 'border-purple-500'}`}>
+                      <CardContent className="p-4">
+                        <div className="space-y-3">
+                          <div className="flex items-center justify-between">
+                            <h3 className="font-semibold text-purple-600">Participant 2</h3>
+                            <Badge 
+                              variant={getParticipantStatus(2) === 'Submitted' ? 'default' : 'outline'}
+                              className={getParticipantStatus(2) === 'Submitted' ? 'bg-green-600 text-white text-lg px-4 py-2' : 'text-lg px-4 py-2'}
+                            >
+                              {getParticipantStatus(2) === 'Submitted' ? '✅ SUBMITTED' : '⏳ PENDING'}
+                            </Badge>
+                          </div>
+                          <div className="text-sm text-muted-foreground">
+                            {battle.participant2_wallet ? 
+                              `${battle.participant2_wallet.slice(0, 6)}...${battle.participant2_wallet.slice(-4)}` : 
+                              'Not joined'
+                            }
+                          </div>
+                          {getParticipantPrompt(2) && (
+                            <div className="space-y-2">
+                              <div className="flex items-center justify-between">
+                                <span className="text-sm font-medium text-green-700">✅ Prompt Submitted:</span>
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={() => setShowPromptPreviews(!showPromptPreviews)}
+                                >
+                                  {showPromptPreviews ? 'Hide' : 'Show'}
+                                </Button>
+                              </div>
+                              {showPromptPreviews ? (
+                                <div className="bg-green-100 p-3 rounded-lg border border-green-300">
+                                  <p className="text-sm text-foreground">
+                                    "{getParticipantPrompt(2)}"
+                                  </p>
+                                </div>
+                              ) : (
+                                <div className="bg-green-100 p-3 rounded-lg border border-green-300">
+                                  <p className="text-sm text-foreground">
+                                    "{truncatePrompt(getParticipantPrompt(2)!, 80)}"
+                                  </p>
+                                </div>
+                              )}
+                            </div>
+                          )}
+                        </div>
+                      </CardContent>
+                    </Card>
+                  </div>
+
+                  {/* Start Image Generation Button */}
+                  {canStartImageGeneration() && (
+                    <div className="text-center">
+                      <Button
+                        size="lg"
+                        className="bg-purple-600 hover:bg-purple-700 text-lg font-semibold px-8 py-3"
+                        onClick={() => {
+                          toast.success('🎨 Starting Image Generation!', {
+                            description: 'Both prompts are ready for AI image generation',
+                            duration: 5000
+                          })
+                        }}
+                      >
+                        🎨 Start Image Generation
+                      </Button>
+                      <p className="text-sm text-muted-foreground mt-2">
+                        Both participants have submitted their prompts
+                      </p>
+                    </div>
+                  )}
+
+                  {/* Progress Status */}
+                  <div className="text-center">
+                    <Badge variant="default" className="text-lg px-4 py-2">
+                      {getParticipantStatus(1) === 'Submitted' && getParticipantStatus(2) === 'Submitted' 
+                        ? "2/2 Prompts Submitted - Ready for Image Generation!" 
+                        : `${(getParticipantStatus(1) === 'Submitted' ? 1 : 0) + (getParticipantStatus(2) === 'Submitted' ? 1 : 0)}/2 Prompts Submitted`
+                      }
+                    </Badge>
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+
             {/* Participants */}
             <Card>
               <CardHeader>
@@ -523,6 +779,23 @@ export default function JoinBattlePage() {
                       <p className="text-xl text-muted-foreground">
                         Complete the battle concept with your creative prompt!
                       </p>
+                      
+                      {/* Submission Timer for Audience */}
+                      {submissionTimer !== null && !isHost() && (
+                        <div className="mt-6 bg-orange-50 p-4 rounded-lg border-2 border-orange-200">
+                          <div className="text-4xl font-bold text-orange-600 mb-2">
+                            ⏰ {formatTimer(submissionTimer)}
+                          </div>
+                          <p className="text-lg text-orange-700 font-semibold">
+                            Time remaining for prompt submission
+                          </p>
+                          {submissionTimer < 10000 && (
+                            <p className="text-red-600 font-bold mt-2">
+                              ⚠️ HURRY UP! Time is running out!
+                            </p>
+                          )}
+                        </div>
+                      )}
                     </div>
 
                     {/* Battle Concept - Fixed Starter */}

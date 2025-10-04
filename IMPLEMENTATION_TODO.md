@@ -52,12 +52,12 @@
 - [x] **Demo UI**: Side-by-side prompt submission with fixed concept and completion fields
 - [x] **Test**: Can submit prompts, see confirmation, concept is fixed, both participants can submit
 
-#### **Host Dashboard Enhancements (Feature 4)**
-- [ ] Show per-participant prompt status (Pending/Submitted)
-- [ ] Display prompt previews (truncated) with hide/reveal until both submitted
-- [ ] Provide "Start Image Generation" control when both prompts are submitted (or auto-advance)
-- [ ] Add submission countdown/timer visible to audience
-- [ ] Toast notifications when each prompt is submitted
+#### **Host Dashboard Enhancements (Feature 4)** ✅ **COMPLETED**
+- [x] Show per-participant prompt status (Pending/Submitted)
+- [x] Display prompt previews (truncated) with hide/reveal until both submitted
+- [x] Provide "Start Image Generation" control when both prompts are submitted (or auto-advance)
+- [x] Add submission countdown/timer visible to audience (50-second timer)
+- [x] Toast notifications when each prompt is submitted
 
 ### **Feature 5: Image Generation (fal.ai)** 🚧 **NEXT TO IMPLEMENT**
 - [ ] When both prompts submitted, trigger image generation
@@ -231,13 +231,13 @@ For each feature:
 
 ## 🚀 **CURRENT STATUS**
 
-**Next Feature to Implement**: Feature 4 - Prompt Submission
+**Next Feature to Implement**: Feature 5 - Image Generation (fal.ai)
 
 **Implementation Priority**: 
-1. **Database Schema Update** - Add prompt fields to battles table
-2. **Backend API Development** - Create prompt submission endpoint
-3. **Frontend UI Development** - Build prompt submission interface
-4. **Integration Testing** - Test full prompt submission flow
+1. **Image Generation Service** - Integrate fal.ai for image generation
+2. **Generation Status UI** - Show "Generating images..." with progress indicators
+3. **Image Storage** - Store generated image URLs in database
+4. **Host Dashboard Integration** - Show generation progress in host dashboard
 
 **Last Updated**: January 3, 2025
 
@@ -246,6 +246,7 @@ For each feature:
 - ✅ **Feature 2 COMPLETED**: First participant auto-joining and waiting screen
 - ✅ **Feature 3 COMPLETED**: Second participant joining and active battle display
 - ✅ **Feature 3.5 COMPLETED**: Battle Host Dashboard with real-time participant tracking
+- ✅ **Feature 4 COMPLETED**: Prompt submission with 50-second timer and enhanced host dashboard
 - ✅ **QR Code Testing**: Successfully tested on mobile device
 - 🐛 **Bug Fixed**: Wallet connection state update issue resolved
 - 🐛 **Bug Fixed**: Atomic UPDATE query logic fixed for battle joining
@@ -259,6 +260,8 @@ For each feature:
 - ✅ **Comprehensive Testing**: Full test suite for Features 1-3 with manual testing guide
 - ✅ **QR Code Test Fix**: Fixed QR generation test to properly validate data URL format
 - 🗑️ **Database Flush**: Successfully flushed database for clean testing environment
+- ⏰ **Timer Enhancement**: Reduced prompt submission timer from 5 minutes to 50 seconds
+- 🎯 **Host Dashboard**: Enhanced visibility with prominent countdown and prompt status indicators
 
 ---
 
