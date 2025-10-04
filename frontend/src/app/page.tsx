@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect } from 'react'
 import { usePrivy } from '@privy-io/react-auth'
 import { AuthButton } from '@/components/AuthButton'
 import { LoginPage } from '@/components/LoginPage'
@@ -17,7 +17,7 @@ import { useBattlePolling } from '@/hooks/useBattlePolling'
 interface Battle {
   id: string
   concept: string
-  status: 'waiting' | 'active' | 'voting' | 'completed' | 'cancelled'
+  status: 'waiting' | 'active' | 'voting' | 'completed' | 'cancelled' | 'prompts_submitted'
   created_at: string
   creator_wallet: string
   participant1_wallet: string | null
@@ -31,16 +31,98 @@ export default function Home() {
   const [battle, setBattle] = useState<Battle | null>(null)
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [myBattles, setMyBattles] = useState<Battle[]>([])
+  const [, setIsLoadingMyBattles] = useState(false)
 
   // Check if current user is the battle creator
   const isBattleCreator = () => {
     return battle && user?.wallet?.address && battle.creator_wallet === user.wallet.address
   }
 
+  // Fetch user's battles to check for active ones
+  const fetchMyBattles = async () => {
+    if (!authenticated || !user?.wallet?.address) return
+
+    try {
+      setIsLoadingMyBattles(true)
+      const result = await api.getMyBattles()
+      
+      if (result.success) {
+        const battles = result.data || []
+        setMyBattles(battles)
+        
+        // Check for active battles (waiting, active, or prompts_submitted)
+        const activeBattles = battles.filter((b: Battle) => 
+          b.status === 'waiting' || b.status === 'active' || b.status === 'prompts_submitted'
+        )
+        
+        if (activeBattles.length > 0 && !battle) {
+          // If there's an active battle and no current battle loaded, show reconnection option
+          const mostRecentActive = activeBattles[0]
+          toast.info('🎯 Active battle found!', {
+            description: `You have an active battle: "${mostRecentActive.concept}"`,
+            duration: 8000,
+            action: {
+              label: 'Reconnect',
+              onClick: () => reconnectToBattle(mostRecentActive)
+            }
+          })
+        }
+      }
+    } catch (err) {
+      console.error('Error fetching my battles:', err)
+    } finally {
+      setIsLoadingMyBattles(false)
+    }
+  }
+
+  // Reconnect to an existing battle
+  const reconnectToBattle = async (battleToReconnect: Battle) => {
+    try {
+      setIsLoading(true)
+      setError(null)
+      
+      // Fetch the latest battle data
+      const result = await api.getBattle(battleToReconnect.id)
+      
+      if (result.success) {
+        const latestBattle = result.data
+        
+        // Ensure we have the QR code data
+        const battleWithQR = {
+          ...latestBattle,
+          joiningQR: latestBattle.joining_qr_data || battleToReconnect.joining_qr_data
+        }
+        
+        setBattle(battleWithQR)
+        toast.success('🎯 Reconnected to battle!', {
+          description: `Resumed hosting: "${latestBattle.concept}"`,
+          duration: 5000
+        })
+      } else {
+        setError('Failed to reconnect to battle')
+        toast.error('Failed to reconnect to battle')
+      }
+    } catch (err) {
+      console.error('Error reconnecting to battle:', err)
+      setError('Failed to reconnect to battle')
+      toast.error('Failed to reconnect to battle')
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
+  // Fetch user's battles when authenticated
+  useEffect(() => {
+    if (ready && authenticated && user?.wallet?.address) {
+      fetchMyBattles()
+    }
+  }, [ready, authenticated, user?.wallet?.address, fetchMyBattles])
+
   // Use coordinated polling hook
   const { isPolling } = useBattlePolling({
     battleId: battle?.id || null,
-    enabled: Boolean(battle && isBattleCreator() && battle.status === 'waiting'),
+    enabled: Boolean(battle && isBattleCreator() && (battle.status === 'waiting' || battle.status === 'active' || battle.status === 'prompts_submitted')),
     interval: 3000,
     onUpdate: () => fetchBattleStatus(true)
   })
@@ -190,40 +272,109 @@ export default function Home() {
 
         <div className="space-y-8">
           {!battle ? (
-            // Battle Creation Interface
-            <Card className="max-w-2xl mx-auto">
-              <CardHeader className="text-center">
-                <CardTitle className="text-2xl">Create New Battle</CardTitle>
-                <p className="text-muted-foreground">
-                  Generate a unique AI art concept and create a battle for participants to join
-                </p>
-              </CardHeader>
-              <CardContent className="text-center space-y-6">
-                <div className="space-y-4">
-                  <div className="text-sm text-muted-foreground space-y-2">
-                    <p>🎨 AI will generate a unique art concept</p>
-                    <p>📱 QR code will be created for participants to join</p>
-                    <p>⚔️ First 2 users to scan become the battle participants</p>
+            <div className="space-y-6">
+              {/* Active Battles Section */}
+              {myBattles.length > 0 && (
+                <Card className="max-w-4xl mx-auto">
+                  <CardHeader>
+                    <CardTitle className="text-2xl text-center">🎯 Your Active Battles</CardTitle>
+                    <p className="text-muted-foreground text-center">
+                      Reconnect to your ongoing battles
+                    </p>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="space-y-4">
+                      {myBattles
+                        .filter((b: Battle) => b.status === 'waiting' || b.status === 'active' || b.status === 'prompts_submitted')
+                        .map((activeBattle) => (
+                          <Card key={activeBattle.id} className="border-2 border-orange-500">
+                            <CardContent className="p-6">
+                              <div className="flex items-center justify-between">
+                                <div className="space-y-2">
+                                  <div className="flex items-center gap-2">
+                                    <Badge variant={activeBattle.status === 'waiting' ? 'default' : 'secondary'}>
+                                      {activeBattle.status.toUpperCase()}
+                                    </Badge>
+                                    <span className="text-sm text-muted-foreground">
+                                      {new Date(activeBattle.created_at).toLocaleString()}
+                                    </span>
+                                  </div>
+                                  <h3 className="text-lg font-semibold">Battle Concept:</h3>
+                                  <p className="text-foreground font-medium">
+                                    &ldquo;{activeBattle.concept}&rdquo;
+                                  </p>
+                                  <div className="flex items-center gap-4 text-sm text-muted-foreground">
+                                    <span>
+                                      👥 {[activeBattle.participant1_wallet, activeBattle.participant2_wallet].filter(Boolean).length}/2 participants
+                                    </span>
+                                    <span>ID: {activeBattle.id.slice(0, 8)}...</span>
+                                  </div>
+                                </div>
+                                <Button
+                                  onClick={() => reconnectToBattle(activeBattle)}
+                                  disabled={isLoading}
+                                  size="lg"
+                                  className="bg-orange-600 hover:bg-orange-700"
+                                >
+                                  {isLoading ? (
+                                    <div className="flex items-center gap-2">
+                                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                                      Reconnecting...
+                                    </div>
+                                  ) : (
+                                    '🎯 Reconnect'
+                                  )}
+                                </Button>
+                              </div>
+                            </CardContent>
+                          </Card>
+                        ))}
+                      
+                      {myBattles.filter((b: Battle) => b.status === 'waiting' || b.status === 'active' || b.status === 'prompts_submitted').length === 0 && (
+                        <div className="text-center py-8">
+                          <p className="text-muted-foreground">No active battles found</p>
+                        </div>
+                      )}
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
+
+              {/* Battle Creation Interface */}
+              <Card className="max-w-2xl mx-auto">
+                <CardHeader className="text-center">
+                  <CardTitle className="text-2xl">Create New Battle</CardTitle>
+                  <p className="text-muted-foreground">
+                    Generate a unique AI art concept and create a battle for participants to join
+                  </p>
+                </CardHeader>
+                <CardContent className="text-center space-y-6">
+                  <div className="space-y-4">
+                    <div className="text-sm text-muted-foreground space-y-2">
+                      <p>🎨 AI will generate a unique art concept</p>
+                      <p>📱 QR code will be created for participants to join</p>
+                      <p>⚔️ First 2 users to scan become the battle participants</p>
+                    </div>
+                    
+                    <Button 
+                      onClick={handleCreateBattle}
+                      disabled={isLoading}
+                      size="lg"
+                      className="w-full h-16 text-lg font-semibold"
+                    >
+                      {isLoading ? (
+                        <div className="flex items-center gap-2">
+                          <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
+                          Creating Battle...
+                        </div>
+                      ) : (
+                        '🎯 Create Battle'
+                      )}
+                    </Button>
                   </div>
-                  
-                  <Button 
-                    onClick={handleCreateBattle}
-                    disabled={isLoading}
-                    size="lg"
-                    className="w-full h-16 text-lg font-semibold"
-                  >
-                    {isLoading ? (
-                      <div className="flex items-center gap-2">
-                        <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
-                        Creating Battle...
-                      </div>
-                    ) : (
-                      '🎯 Create Battle'
-                    )}
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
+                </CardContent>
+              </Card>
+            </div>
           ) : (
             // Battle Display Interface
             <div className="space-y-6">
@@ -251,7 +402,7 @@ export default function Home() {
                     <div className="bg-muted p-6 rounded-lg">
                       <h3 className="text-xl font-semibold mb-3 text-center">Battle Concept:</h3>
                       <p className="text-lg font-medium text-foreground text-center">
-                        "{battle.concept}"
+                        &ldquo;{battle.concept}&rdquo;
                       </p>
                       <p className="text-sm text-muted-foreground mt-2 text-center">
                         Participants will complete this concept to create their art
@@ -342,7 +493,7 @@ export default function Home() {
                   <CardContent className="text-center">
                     <div className="bg-muted p-6 rounded-lg">
                       <p className="text-lg font-medium text-foreground">
-                        "{battle.concept}"
+                        &ldquo;{battle.concept}&rdquo;
                       </p>
                       <p className="text-sm text-muted-foreground mt-2">
                         Participants will complete this concept to create their art
@@ -435,7 +586,7 @@ export default function Home() {
                 <li>• Participants complete the concept to create their art prompts</li>
                 <li>• AI generates images from the completed prompts</li>
                 <li>• Audience votes on the best artwork</li>
-                <li>• Winner's artwork is minted as an NFT on Monad</li>
+                <li>• Winner&apos;s artwork is minted as an NFT on Monad</li>
               </ul>
             </div>
           </AlertDescription>

@@ -60,6 +60,21 @@ export const api = {
     return response.json();
   },
 
+  // Get battles created by current user
+  async getMyBattles() {
+    const headers = await getAuthHeaders();
+    const response = await fetch(buildUrl('/api/battles/my-battles'), {
+      method: 'GET',
+      headers,
+    });
+    
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+    
+    return response.json();
+  },
+
   // Get battle by ID
   async getBattle(id: string) {
     const headers = await getAuthHeaders();

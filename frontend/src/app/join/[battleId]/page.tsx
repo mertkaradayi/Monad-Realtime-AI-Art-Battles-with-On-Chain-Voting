@@ -44,7 +44,7 @@ export default function JoinBattlePage() {
   const [promptSubmitted, setPromptSubmitted] = useState(false)
   const [showPromptPreviews, setShowPromptPreviews] = useState(false)
   const [submissionTimer, setSubmissionTimer] = useState<number | null>(null)
-  const [timerInterval, setTimerInterval] = useState<NodeJS.Timeout | null>(null)
+  const submissionTimerRef = useRef<ReturnType<typeof setInterval> | null>(null)
 
   // Fetch battle details and auto-join if possible
   useEffect(() => {
@@ -134,41 +134,49 @@ export default function JoinBattlePage() {
 
   // Timer effect for submission countdown
   useEffect(() => {
-    if (battle?.status === 'active' && !canStartImageGeneration()) {
-      // Start 50-second countdown timer
-      const startTime = Date.now()
-      const duration = 50 * 1000 // 50 seconds in milliseconds
-      
-      const interval = setInterval(() => {
-        const elapsed = Date.now() - startTime
-        const remaining = Math.max(0, duration - elapsed)
-        setSubmissionTimer(remaining)
-        
-        if (remaining === 0) {
-          clearInterval(interval)
-          setTimerInterval(null)
-          toast.warning('⏰ Time\'s up!', {
-            description: 'Prompt submission time has expired',
-            duration: 5000
-          })
-        }
-      }, 1000)
-      
-      setTimerInterval(interval)
-      setSubmissionTimer(duration)
-    } else {
-      // Clear timer if battle is not active or both prompts are submitted
-      if (timerInterval) {
-        clearInterval(timerInterval)
-        setTimerInterval(null)
-      }
+    const isActive = battle?.status === 'active'
+    const bothPromptsSubmitted = Boolean(battle?.participant1_prompt && battle?.participant2_prompt)
+
+    if (!isActive || bothPromptsSubmitted) {
       setSubmissionTimer(null)
+      if (submissionTimerRef.current) {
+        clearInterval(submissionTimerRef.current)
+        submissionTimerRef.current = null
+      }
+      return
     }
 
+    const startTime = Date.now()
+    const duration = 50 * 1000 // 50 seconds in milliseconds
+
+    if (submissionTimerRef.current) {
+      clearInterval(submissionTimerRef.current)
+      submissionTimerRef.current = null
+    }
+
+    setSubmissionTimer(duration)
+
+    submissionTimerRef.current = setInterval(() => {
+      const elapsed = Date.now() - startTime
+      const remaining = Math.max(0, duration - elapsed)
+      setSubmissionTimer(remaining)
+
+      if (remaining === 0) {
+        if (submissionTimerRef.current) {
+          clearInterval(submissionTimerRef.current)
+          submissionTimerRef.current = null
+        }
+        toast.warning('⏰ Time\'s up!', {
+          description: 'Prompt submission time has expired',
+          duration: 5000
+        })
+      }
+    }, 1000)
+
     return () => {
-      if (timerInterval) {
-        clearInterval(timerInterval)
-        setTimerInterval(null)
+      if (submissionTimerRef.current) {
+        clearInterval(submissionTimerRef.current)
+        submissionTimerRef.current = null
       }
     }
   }, [battle?.status, battle?.participant1_prompt, battle?.participant2_prompt])
