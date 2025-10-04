@@ -669,6 +669,150 @@ export default function Home() {
                       </Card>
                     </div>
 
+                    {/* Generated Images Display - Host Dashboard */}
+                    {battle.image_generation_status === 'completed' && battle.participant1_image_url && battle.participant2_image_url && (
+                      <Card className="border-2 border-green-500">
+                        <CardHeader>
+                          <div className="text-center space-y-4">
+                            <CardTitle className="text-2xl text-green-600">
+                              🎨 Generated Images
+                            </CardTitle>
+                            <div className="flex items-center justify-center">
+                              <div className="bg-gradient-to-r from-blue-500 to-purple-500 text-white text-lg font-bold px-3 py-1 rounded-full">
+                                VS BATTLE
+                              </div>
+                            </div>
+                            <p className="text-muted-foreground">
+                              Both participants' AI-generated artwork is ready!
+                            </p>
+                          </div>
+                        </CardHeader>
+                        <CardContent className="py-8">
+                          <div className="flex flex-col lg:flex-row gap-6 max-w-7xl mx-auto">
+                            {/* Participant 1 Image */}
+                            <Card className="border-2 border-blue-500 flex-1">
+                              <CardHeader>
+                                <CardTitle className="text-2xl text-blue-600 text-center">
+                                  Participant 1
+                                </CardTitle>
+                                <div className="text-center">
+                                  <Badge variant="outline" className="text-lg px-4 py-2">
+                                    {battle.participant1_wallet ? 
+                                      `${battle.participant1_wallet.slice(0, 6)}...${battle.participant1_wallet.slice(-4)}` : 
+                                      'Unknown'
+                                    }
+                                  </Badge>
+                                </div>
+                              </CardHeader>
+                              <CardContent className="p-6">
+                                <div className="space-y-6">
+                                  <div className="relative">
+                                    <img
+                                      src={battle.participant1_image_url}
+                                      alt="Participant 1 Generated Image"
+                                      className="w-full h-[600px] object-cover rounded-lg border-2 border-blue-200"
+                                      onError={(e) => {
+                                        const target = e.target as HTMLImageElement;
+                                        target.src = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjAwIiBoZWlnaHQ9IjYwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSIjZjNmNGY2Ii8+PHRleHQgeD0iNTAlIiB5PSI1MCUiIGZvbnQtZmFtaWx5PSJBcmlhbCIgZm9udC1zaXplPSIyNCIgZmlsbD0iIzZjNzI4MCIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZHk9Ii4zZW0iPkltYWdlIG5vdCBmb3VuZDwvdGV4dD48L3N2Zz4=';
+                                      }}
+                                    />
+                                    <div className="absolute top-4 left-4">
+                                      <Badge className="bg-blue-600 text-white text-lg px-4 py-2">Participant 1</Badge>
+                                    </div>
+                                  </div>
+                                  <div className="bg-blue-50 p-6 rounded-lg space-y-4">
+                                    <div>
+                                      <p className="text-sm text-blue-600 mb-2 font-semibold">🎯 Battle Concept:</p>
+                                      <p className="text-base text-blue-800 font-medium">
+                                        &ldquo;{battle.concept}&rdquo;
+                                      </p>
+                                    </div>
+                                    <div>
+                                      <p className="text-sm text-blue-600 mb-2 font-semibold">✨ User Completion:</p>
+                                      <p className="text-base text-foreground">
+                                        &ldquo;{battle.participant1_prompt?.replace(battle.concept, '').trim()}&rdquo;
+                                      </p>
+                                    </div>
+                                    <div className="border-t border-blue-200 pt-4">
+                                      <p className="text-sm text-blue-600 mb-2 font-semibold">📝 Full Prompt:</p>
+                                      <p className="text-base text-foreground">
+                                        &ldquo;{battle.participant1_prompt}&rdquo;
+                                      </p>
+                                    </div>
+                                  </div>
+                                </div>
+                              </CardContent>
+                            </Card>
+
+                            {/* Participant 2 Image */}
+                            <Card className="border-2 border-purple-500 flex-1">
+                              <CardHeader>
+                                <CardTitle className="text-2xl text-purple-600 text-center">
+                                  Participant 2
+                                </CardTitle>
+                                <div className="text-center">
+                                  <Badge variant="outline" className="text-lg px-4 py-2">
+                                    {battle.participant2_wallet ? 
+                                      `${battle.participant2_wallet.slice(0, 6)}...${battle.participant2_wallet.slice(-4)}` : 
+                                      'Unknown'
+                                    }
+                                  </Badge>
+                                </div>
+                              </CardHeader>
+                              <CardContent className="p-6">
+                                <div className="space-y-6">
+                                  <div className="relative">
+                                    <img
+                                      src={battle.participant2_image_url}
+                                      alt="Participant 2 Generated Image"
+                                      className="w-full h-[600px] object-cover rounded-lg border-2 border-purple-200"
+                                      onError={(e) => {
+                                        const target = e.target as HTMLImageElement;
+                                        target.src = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjAwIiBoZWlnaHQ9IjYwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSIjZjNmNGY2Ii8+PHRleHQgeD0iNTAlIiB5PSI1MCUiIGZvbnQtZmFtaWx5PSJBcmlhbCIgZm9udC1zaXplPSIyNCIgZmlsbD0iIzZjNzI4MCIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZHk9Ii4zZW0iPkltYWdlIG5vdCBmb3VuZDwvdGV4dD48L3N2Zz4=';
+                                      }}
+                                    />
+                                    <div className="absolute top-4 left-4">
+                                      <Badge className="bg-purple-600 text-white text-lg px-4 py-2">Participant 2</Badge>
+                                    </div>
+                                  </div>
+                                  <div className="bg-purple-50 p-6 rounded-lg space-y-4">
+                                    <div>
+                                      <p className="text-sm text-purple-600 mb-2 font-semibold">🎯 Battle Concept:</p>
+                                      <p className="text-base text-purple-800 font-medium">
+                                        &ldquo;{battle.concept}&rdquo;
+                                      </p>
+                                    </div>
+                                    <div>
+                                      <p className="text-sm text-purple-600 mb-2 font-semibold">✨ User Completion:</p>
+                                      <p className="text-base text-foreground">
+                                        &ldquo;{battle.participant2_prompt?.replace(battle.concept, '').trim()}&rdquo;
+                                      </p>
+                                    </div>
+                                    <div className="border-t border-purple-200 pt-4">
+                                      <p className="text-sm text-purple-600 mb-2 font-semibold">📝 Full Prompt:</p>
+                                      <p className="text-base text-foreground">
+                                        &ldquo;{battle.participant2_prompt}&rdquo;
+                                      </p>
+                                    </div>
+                                  </div>
+                                </div>
+                              </CardContent>
+                            </Card>
+                          </div>
+
+                          {/* Voting Phase Status */}
+                          <div className="text-center mt-8">
+                            <Badge variant="default" className="text-xl px-6 py-3 bg-green-600">
+                              🗳️ Ready for Voting Phase
+                            </Badge>
+                            <p className="text-lg text-muted-foreground mt-4">
+                              The voting QR code will be generated soon for audience participation.
+                            </p>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    )}
+
                     {/* Battle Status Summary */}
                     <div className="text-center">
                       <div className="bg-primary/10 p-4 rounded-lg">
@@ -680,6 +824,8 @@ export default function Home() {
                             "1/2 participants joined - waiting for second participant..."}
                           {battle.status === 'active' && 
                             "🎉 Battle is active! Both participants have joined."}
+                          {battle.image_generation_status === 'completed' && 
+                            "🎨 Images generated! Ready for voting phase."}
                         </p>
                       </div>
                     </div>
