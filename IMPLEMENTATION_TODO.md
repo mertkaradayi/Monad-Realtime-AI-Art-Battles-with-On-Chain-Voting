@@ -73,70 +73,86 @@
 - [x] Error state with retry control per participant
 - [x] Timestamps for generation start/finish
 
-### **Feature 6: Image Display & Voting QR Generation** 🚧 **NEXT TO IMPLEMENT**
-- [ ] Show both generated images side by side (LARGE images - 600x600px minimum)
-- [ ] Display which participant created which image (LARGE labels)
-- [ ] Generate VOTING QR code for audience (40+ people)
-- [ ] Show battle concept and "Voting Phase" status (LARGE status banner)
-- [ ] **Demo UI**: Split-screen with large images, clear participant labels, battle concept, and VOTING QR code
-- [ ] **Test**: Can see both images clearly, battle concept is visible, voting QR is generated
+### **Feature 6: On-Chain Voting Contract Deployment** 🚧 **NEXT TO IMPLEMENT**
+- [x] Show both generated images side by side (LARGE images - 600x600px minimum) ✅ **COMPLETED - Host Dashboard**
+- [x] Display which participant created which image (LARGE labels) ✅ **COMPLETED - Host Dashboard**
+- [ ] **Smart Contract Development**: Create BattleVoting contract for Monad testnet
+- [ ] **Contract Deployment**: Deploy voting contract when images are ready
+- [ ] **QR Code Generation**: Generate voting QR with contract address and battle parameters
+- [ ] **Monad Integration**: Connect to Monad testnet RPC endpoints
+- [ ] Show battle concept and "On-Chain Voting Phase" status (LARGE status banner)
+- [ ] **Demo UI**: Split-screen with large images, clear participant labels, battle concept, and ON-CHAIN VOTING QR code
+- [ ] **Test**: Contract deploys successfully, QR code contains valid contract address, Monad connection works
 
 #### **Host Dashboard Enhancements (Feature 6)**
 - [ ] Present both images side-by-side with large labels
-- [ ] Generate and display Voting QR with copy link button
-- [ ] "Start Voting" control to transition to voting phase
-- [ ] Optional blur/hide images toggle until reveal
-- [ ] Voting phase countdown timer
+- [ ] Generate and display On-Chain Voting QR with contract address
+- [ ] "Deploy Voting Contract" control to start on-chain voting phase
+- [ ] Contract deployment status and transaction hash display
+- [ ] 60-second voting countdown timer
+- [ ] Real-time contract state monitoring
 
-### **Feature 7: Voting Interface**
-- [ ] Audience scans VOTING QR code to access voting interface
-- [ ] Connect wallet (Privy) to vote
-- [ ] Show voting buttons for each image (LARGE, prominent buttons)
-- [ ] Allow users to cast votes (1 per wallet per battle)
-- [ ] Store votes in database
-- [ ] **Demo UI**: Large voting buttons under each image with clear labels and "Scan QR to Vote" instruction
-- [ ] **Test**: Can vote, vote is recorded, multiple people can vote
+### **Feature 7: On-Chain Voting Interface**
+- [ ] **Wallet Connection**: Connect to Monad testnet wallet via Privy
+- [ ] **Contract Interaction**: Direct smart contract voting calls
+- [ ] **Vote Validation**: Ensure 1 vote per wallet per battle (on-chain enforcement)
+- [ ] **Transaction Handling**: Handle 100+ concurrent voting transactions
+- [ ] **Real-time Updates**: Poll contract state for live vote counts
+- [ ] **Gas Optimization**: Efficient contract calls for high throughput
+- [ ] **Demo UI**: Large voting buttons with transaction status and gas estimation
+- [ ] **Test**: Can vote on-chain, vote is recorded in smart contract, multiple people can vote simultaneously
 
 #### **Host Dashboard Enhancements (Feature 7)**
-- [ ] Show live incoming votes per participant (aggregated)
+- [ ] Show live on-chain vote counts per participant (from contract)
 - [ ] Display active voters/connected wallets count
-- [ ] "End Voting" control to close voting phase
-- [ ] Surface duplicate-vote rejections (1/wallet) in logs panel
+- [ ] Real-time transaction monitoring and confirmation status
+- [ ] Gas price optimization and transaction batching
+- [ ] Contract event listening for vote events
+- [ ] "End Voting" control to close 60-second voting window
 
-### **Feature 8: Real-time Vote Counting**
-- [ ] Show live vote counts (LARGE, animated counters)
-- [ ] Update counts in real-time
-- [ ] **Demo UI**: Prominent vote counters with animations and sound effects
-- [ ] **Test**: Vote counts update immediately
+### **Feature 8: On-Chain Vote Counting & Real-time Updates**
+- [ ] **Contract State Polling**: Real-time vote count updates from smart contract
+- [ ] **Event Listening**: Listen for VoteCast events from contract
+- [ ] **Performance Optimization**: Handle 100+ votes in 60 seconds
+- [ ] **Transaction Status**: Show pending/confirmed states for all votes
+- [ ] **Demo UI**: Prominent on-chain vote counters with blockchain transaction animations
+- [ ] **Test**: Vote counts update in real-time from contract, handles high transaction volume
 
 #### **Host Dashboard Enhancements (Feature 8)**
-- [ ] Large, animated counters for each participant
-- [ ] Optional sound toggle for vote events
-- [ ] Simple trend graph (optional) for audience engagement
+- [ ] Large, animated counters showing on-chain vote counts
+- [ ] Real-time transaction feed with wallet addresses
+- [ ] Gas usage monitoring and optimization suggestions
+- [ ] Contract interaction logs and error handling
+- [ ] Voting participation rate and engagement metrics
 
-### **Feature 9: Winner Determination**
-- [ ] When voting ends, calculate winner
-- [ ] Show winner announcement (LARGE, dramatic winner reveal)
-- [ ] **Demo UI**: Full-screen winner celebration with confetti/animations
-- [ ] **Test**: Winner is determined correctly
+### **Feature 9: On-Chain Winner Determination**
+- [ ] **60-Second Timer**: Enforce voting window with block timestamp validation
+- [ ] **On-Chain Calculation**: Determine winner directly from smart contract
+- [ ] **Automatic Trigger**: Auto-trigger winner announcement when voting ends
+- [ ] **Blockchain Verification**: All results publicly verifiable on Monad testnet
+- [ ] **Demo UI**: Full-screen winner celebration with on-chain verification display
+- [ ] **Test**: Winner determined correctly from on-chain data, results are verifiable
 
 #### **Host Dashboard Enhancements (Feature 9)**
-- [ ] "Reveal Winner" control with dramatic animation trigger
-- [ ] Show final tallies and margin of victory
-- [ ] Tie-break workflow (e.g., quick runoff or host tiebreak)
-- [ ] "Proceed to Mint" button
+- [ ] "Reveal On-Chain Winner" with blockchain verification
+- [ ] Show final tallies with contract transaction hashes
+- [ ] Tie-break workflow (on-chain random selection or host override)
+- [ ] "Proceed to NFT Minting" button with winner verification
+- [ ] Contract state finalization and result locking
 
-### **Feature 10: NFT Minting**
-- [ ] Mint winner's image as NFT on Monad
-- [ ] Store NFT metadata
-- [ ] Show NFT link/transaction (LARGE transaction hash display)
+### **Feature 10: On-Chain NFT Minting**
+- [ ] **Smart Contract Integration**: Mint winner's image as NFT on Monad testnet
+- [ ] **Metadata Storage**: Store NFT metadata on-chain with IPFS integration
+- [ ] **Winner Verification**: Verify winner from on-chain voting results
+- [ ] **Transaction Display**: Show NFT minting transaction hash and explorer link
 - [ ] **Demo UI**: Prominent NFT minting status with blockchain transaction details
-- [ ] **Test**: NFT is minted successfully
+- [ ] **Test**: NFT is minted successfully on Monad testnet, metadata is accessible
 
 #### **Host Dashboard Enhancements (Feature 10)**
-- [ ] Mint progress indicator with transaction hash and explorer link
-- [ ] Retry on failure with surfaced error details
-- [ ] Share QR/link to view minted NFT
+- [ ] On-chain minting progress with transaction hash and Monad explorer link
+- [ ] Retry on failure with surfaced error details and gas optimization
+- [ ] Share QR/link to view minted NFT on Monad testnet
+- [ ] NFT metadata verification and IPFS pinning status
 
 ### **Feature 11: Battle Results**
 - [ ] Show complete battle results (LARGE summary display)
@@ -197,17 +213,90 @@ For each feature:
 - **Who Uses**: First 2 users who scan become Participant 1 & 2
 - **Display**: Full-screen with battle concept and "Scan to Join Battle"
 
-### **Voting QR Code (Feature 6)**
-- **Purpose**: For audience to vote (40+ people)
-- **When Generated**: After images are generated
-- **Who Uses**: Anyone who wants to vote
-- **Display**: Alongside images with "Scan QR to Vote" instruction
+### **On-Chain Voting QR Code (Feature 6)**
+- **Purpose**: For audience to vote on-chain (100+ people)
+- **When Generated**: After images are generated and voting contract is deployed
+- **Who Uses**: Anyone who wants to vote on Monad testnet
+- **Content**: `monad://voting-contract-address?battleId=123&participant1=0x...&participant2=0x...`
+- **Display**: Alongside images with "Scan QR to Vote On-Chain" instruction
 
 ### **QR Code Flow**
 1. **Battle Creation** → Generate Joining QR
 2. **First 2 Users** → Scan Joining QR → Become Participants
-3. **Images Generated** → Generate Voting QR
-4. **40+ Audience** → Scan Voting QR → Vote
+3. **Images Generated** → Deploy Voting Contract → Generate On-Chain Voting QR
+4. **100+ Audience** → Scan Voting QR → Connect Wallet → Vote On-Chain
+
+## ⛓️ **ON-CHAIN VOTING SYSTEM REQUIREMENTS**
+
+### **Smart Contract Architecture**
+```solidity
+contract BattleVoting {
+    struct Battle {
+        uint256 battleId;
+        address participant1;
+        address participant2;
+        uint256 startTime;
+        uint256 endTime;
+        uint256 participant1Votes;
+        uint256 participant2Votes;
+        bool votingEnded;
+        string participant1Image;
+        string participant2Image;
+    }
+    
+    mapping(uint256 => Battle) public battles;
+    mapping(uint256 => mapping(address => bool)) public hasVoted;
+    
+    event VoteCast(uint256 indexed battleId, address indexed voter, uint256 participant);
+    event VotingEnded(uint256 indexed battleId, uint256 winner);
+    
+    function vote(uint256 battleId, uint256 participant) external {
+        // Voting logic with time validation and duplicate prevention
+    }
+    
+    function getResults(uint256 battleId) external view returns (uint256, uint256) {
+        // Return vote counts
+    }
+    
+    function endVoting(uint256 battleId) external {
+        // End voting and determine winner
+    }
+}
+```
+
+### **Technical Stack Requirements**
+
+#### **Smart Contract Development**
+- **Solidity**: For contract development
+- **Hardhat/Foundry**: For compilation and testing
+- **Monad SDK**: For Monad-specific deployment
+- **OpenZeppelin**: For secure contract patterns
+
+#### **Frontend Integration**
+- **Web3.js/Ethers.js**: For contract interaction
+- **Privy**: For Monad wallet connection
+- **React Query/SWR**: For real-time contract state polling
+- **QR Code Library**: For voting QR generation
+
+#### **Backend Services**
+- **Contract Deployment Service**: Deploy voting contracts per battle
+- **Monad RPC**: Connect to Monad testnet endpoints
+- **Event Listening**: Listen for voting events and results
+- **Gas Optimization**: Efficient transaction handling
+
+### **Performance Requirements**
+- **Voting Window**: 60 seconds maximum
+- **Target Throughput**: 100+ votes in 60 seconds
+- **Gas Optimization**: Efficient storage patterns for high throughput
+- **Real-time Updates**: Contract state polling every 2-3 seconds
+- **Transaction Handling**: Concurrent transaction management
+
+### **Security Considerations**
+- **Vote Validation**: 1 vote per wallet per battle (on-chain enforcement)
+- **Time Validation**: Block timestamp validation for voting window
+- **Access Control**: Only battle participants and voters can interact
+- **Gas Limit**: Optimize for reasonable gas costs
+- **Event Logging**: Comprehensive event logging for transparency
 
 ## 🎬 **HACKATHON DEMO REQUIREMENTS**
 
@@ -217,27 +306,38 @@ For each feature:
 - **Text**: Large, bold fonts (minimum 24px for body text, 48px+ for headings)
 - **Buttons**: Large, prominent buttons (minimum 60px height)
 - **Status Indicators**: Large, clear status banners
-- **Vote Counters**: Large, animated counters with sound effects
-- **Winner Reveal**: Full-screen celebration with animations
+- **On-Chain Vote Counters**: Large, animated counters with blockchain transaction animations
+- **Winner Reveal**: Full-screen celebration with on-chain verification display
 
 ### **Demo Flow Optimization**
-- **Full-screen modes** for key moments (QR display, image voting, winner reveal)
+- **Full-screen modes** for key moments (QR display, on-chain voting, winner reveal)
 - **Clear visual hierarchy** for audience understanding
 - **Smooth transitions** between battle phases
-- **Real-time updates** with visual feedback
-- **Audience engagement** through live voting and reactions
+- **Real-time blockchain updates** with visual feedback
+- **Audience engagement** through live on-chain voting and reactions
+- **Blockchain transparency** with transaction hashes and explorer links
+
+### **Monad Hackathon Winning Features**
+- **On-Chain Voting**: True blockchain-native voting system
+- **High Throughput**: 100+ votes in 60 seconds on Monad testnet
+- **Transparency**: All votes and results publicly verifiable
+- **Decentralization**: No central authority controlling votes
+- **Real-time Performance**: Live blockchain state updates
+- **Gas Optimization**: Efficient smart contract design
+- **NFT Integration**: Winner NFT minting on Monad testnet
 
 ---
 
 ## 🚀 **CURRENT STATUS**
 
-**Next Feature to Implement**: Feature 5 - Image Generation (fal.ai)
+**Next Feature to Implement**: Feature 6 - On-Chain Voting Contract Deployment
 
 **Implementation Priority**: 
-1. **Image Generation Service** - Integrate fal.ai for image generation
-2. **Generation Status UI** - Show "Generating images..." with progress indicators
-3. **Image Storage** - Store generated image URLs in database
-4. **Host Dashboard Integration** - Show generation progress in host dashboard
+1. **Smart Contract Development** - Create BattleVoting contract for Monad testnet
+2. **Monad Integration** - Set up Monad testnet RPC and deployment tools
+3. **Contract Deployment Service** - Deploy voting contracts per battle
+4. **QR Code Generation** - Generate voting QR with contract address
+5. **On-Chain Voting Interface** - Build frontend for direct contract interaction
 
 **Last Updated**: January 3, 2025
 
